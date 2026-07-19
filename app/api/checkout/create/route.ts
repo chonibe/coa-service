@@ -12,6 +12,7 @@ import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
 import { getStripeCheckoutAllowedShippingCountryCodes } from '@/lib/shopify/shipping-zone-country-codes'
+import { stripeLineItemDescription } from '@/lib/shop/stripe-line-item-description'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -267,7 +268,7 @@ export async function POST(request: NextRequest) {
             unit_amount: Math.round(item.price * 100),
             product_data: {
               name: item.title,
-              description: item.variantTitle || undefined,
+              description: stripeLineItemDescription(item.variantTitle),
               images: item.image ? [item.image] : [],
             },
           },
@@ -313,9 +314,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Restrict payment method if user selected one
+    // Prefer card (+ PayPal). Omit Link so Checkout opens the card form
+    // instead of Link phone verification. Apple Pay / Google Pay still appear via `card`.
     const paymentMethodTypes: Stripe.Checkout.SessionCreateParams['payment_method_types'] =
-      paymentMethodPreference ? [paymentMethodPreference] : ['card', 'paypal', 'link']
+      paymentMethodPreference ? [paymentMethodPreference] : ['card', 'paypal']
 
     const shopDiscountSettings = await getShopDiscountSettings()
     const stripeAllowedShippingCountries = shippingRequired

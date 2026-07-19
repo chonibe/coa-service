@@ -3,11 +3,40 @@
 import { Gem } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CartEditionHold } from '@/lib/shop/cart-edition-hold-types'
+import { resolveCartEditionHoldDisplayNumber } from '@/lib/shop/compute-cart-edition-reserve'
 import {
-  formatCartEditionHoldEditionLabel,
-  resolveCartEditionHoldDisplayNumber,
-} from '@/lib/shop/compute-cart-edition-reserve'
-import { formatCartEditionHoldRemaining } from '@/lib/shop/use-cart-edition-holds'
+  formatEditionHoldCompactLine,
+  formatEditionHoldCompactLineParts,
+  type EditionHoldCompactLineParts,
+} from '@/lib/shop/format-edition-hold-display'
+import { EXPERIENCE_PURCHASE_HINTS } from '@/lib/shop/experience-purchase-hints'
+import {
+  formatCartEditionHoldRemaining,
+  useCartEditionHoldRemainingLive,
+} from '@/lib/shop/use-cart-edition-holds'
+import { ExperienceMeaningHint } from './ExperienceMeaningHint'
+
+export { formatEditionHoldCompactLine } from '@/lib/shop/format-edition-hold-display'
+
+export type EditionHoldCompactLineTextProps = {
+  parts: EditionHoldCompactLineParts
+  className?: string
+  timerClassName?: string
+}
+
+/** Edition segment bold+accent; timer segment regular weight (optionally muted). */
+export function EditionHoldCompactLineText({
+  parts,
+  className,
+  timerClassName = 'font-normal text-muted-foreground',
+}: EditionHoldCompactLineTextProps) {
+  return (
+    <span className={cn('tabular-nums', className)}>
+      <span className="font-bold text-experience-highlight">{parts.editionLabel}</span>
+      <span className={timerClassName}>{parts.timerSuffix}</span>
+    </span>
+  )
+}
 
 export type EditionHoldIndicatorProps = {
   hold: CartEditionHold
@@ -15,17 +44,9 @@ export type EditionHoldIndicatorProps = {
   inCart?: boolean
   /** Projected next edition when hold.editionNumber is not yet assigned (e.g. storefront metrics). */
   fallbackEditionNumber?: number | null
-  /** `banner` — full-width strip; `inline` — compact chip; `line` — cart line caption */
+  /** `banner` — hero chip (centered pill); `inline` — compact chip; `line` — cart line caption */
   variant?: 'banner' | 'inline' | 'line'
   className?: string
-}
-
-function formatEditionHoldCompactLine(
-  displayNumber: number | null,
-  remaining: string
-): string {
-  const editionLabel = formatCartEditionHoldEditionLabel(displayNumber)
-  return `${editionLabel} · ${remaining} reserved`
 }
 
 export function EditionHoldIndicator({
@@ -34,32 +55,40 @@ export function EditionHoldIndicator({
   variant = 'inline',
   className,
 }: EditionHoldIndicatorProps) {
-  const remaining = formatCartEditionHoldRemaining(hold.expiresAt)
+  const remaining = useCartEditionHoldRemainingLive(hold.expiresAt)
   const displayNumber = resolveCartEditionHoldDisplayNumber(hold, fallbackEditionNumber)
+  const lineParts = formatEditionHoldCompactLineParts(displayNumber, remaining)
   const line = formatEditionHoldCompactLine(displayNumber, remaining)
 
   if (variant === 'line') {
     return (
-      <p className={cn('text-[10px] font-medium text-muted-foreground', className)}>
+      <p className={cn('text-[10px] font-normal text-muted-foreground', className)}>
         <Gem className="mr-1 inline h-3 w-3 -translate-y-px text-experience-highlight opacity-90" aria-hidden />
-        <span className="tabular-nums text-foreground">{line}</span>
+        <EditionHoldCompactLineText parts={lineParts} timerClassName="font-normal text-muted-foreground" />
       </p>
     )
   }
 
   if (variant === 'banner') {
     return (
-      <div
-        className={cn(
-          'flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left shadow-sm',
-          className
-        )}
-        role="status"
-      >
-        <Gem className="h-4 w-4 shrink-0 text-experience-highlight" aria-hidden />
-        <p className="min-w-0 text-[12px] font-semibold leading-snug text-foreground tabular-nums">
-          {line}
-        </p>
+      <div className={cn('flex w-fit max-w-full flex-col items-center gap-1.5', className)}>
+        <div
+          className="flex w-fit max-w-full items-center justify-center gap-2 rounded-full border border-border/70 bg-experience-surface/80 px-3.5 py-2 text-center shadow-sm"
+          role="status"
+          aria-label={line}
+        >
+          <Gem className="h-4 w-4 shrink-0 text-experience-highlight md:h-[18px] md:w-[18px]" aria-hidden />
+          <EditionHoldCompactLineText
+            parts={lineParts}
+            className="min-w-0 text-center text-[12px] leading-snug md:text-[13px]"
+            timerClassName="font-normal text-muted-foreground"
+          />
+        </div>
+        <ExperienceMeaningHint
+          explanation={EXPERIENCE_PURCHASE_HINTS.hold}
+          alwaysVisible
+          className="max-w-[16rem] text-center"
+        />
       </div>
     )
   }
@@ -67,13 +96,18 @@ export function EditionHoldIndicator({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground ring-1 ring-border',
+        'inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-normal text-foreground ring-1 ring-border',
         className
       )}
       role="status"
+      aria-label={line}
     >
       <Gem className="h-3 w-3 shrink-0 text-experience-highlight opacity-90" aria-hidden />
-      <span className="tabular-nums">{line}</span>
+      <EditionHoldCompactLineText
+        parts={lineParts}
+        className="text-[10px]"
+        timerClassName="font-normal text-muted-foreground"
+      />
     </span>
   )
 }

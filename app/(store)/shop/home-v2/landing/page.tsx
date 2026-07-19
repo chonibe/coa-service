@@ -17,6 +17,8 @@ import { GuaranteeSection } from '../components/GuaranteeSection'
 import { FaqSectionLanding } from '../components/FaqSectionLanding'
 import { FinalCta } from '../components/FinalCta'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
+import { WelcomeIncentiveStrip } from '@/components/shop/WelcomeIncentiveStrip'
+import { getYotpoStoreReviewSummary } from '@/lib/shop/yotpo-store-reviews'
 import { JsonLd } from '@/components/seo/JsonLd'
 import {
   getCollectionWithListProducts,
@@ -200,19 +202,23 @@ function buildLandingJsonLd() {
 }
 
 export default async function HomeV2LandingPage() {
-  const bestSellerItems = await loadBestSellerGalleryItems()
+  const [bestSellerItems, reviewSummary] = await Promise.all([
+    loadBestSellerGalleryItems(),
+    getYotpoStoreReviewSummary().catch(() => null),
+  ])
 
   return (
     <div className={`${styles.page} ${landingFontVariables}`}>
       <JsonLd id="landing-jsonld" data={buildLandingJsonLd()} />
       <LandingNav />
+      <WelcomeIncentiveStrip tone="dark" />
       <main>
-        <LandingHero />
+        <LandingHero reviewSummary={reviewSummary} />
         <TrustBar />
         <StepsSection />
         <ArtistsWall />
         <BestSellersScrollGallery items={bestSellerItems} />
-        <TestimonialsSection />
+        <TestimonialsSection reviewSummary={reviewSummary} />
         <GuaranteeSection />
         <FaqSectionLanding />
         <FinalCta />

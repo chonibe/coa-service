@@ -22,6 +22,8 @@ import {
   formatTrustStatWithSuffix,
   resolveTrustStatCount,
 } from '@/lib/shop/trust-stat-placeholders'
+import type { ReviewRatingSummary } from '@/lib/shop/format-review-rating-label'
+import { formatReviewRatingLabel } from '@/lib/shop/format-review-rating-label'
 
 const exploreArtistsContent = getStorePageContent('exploreArtists')
 function shortBio(s: string | undefined, max = 220): string | undefined {
@@ -35,6 +37,7 @@ type Props = {
   artists: ExploreArtistRow[]
   experienceUrl: string
   requestedArtistSlug?: string
+  reviewSummary?: ReviewRatingSummary | null
 }
 
 type FilterKey = 'all' | 'featured' | 'withBio'
@@ -63,11 +66,18 @@ function usePrefersReducedMotion() {
   return reduced
 }
 
-export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSlug = '' }: Props) {
+export function ExploreArtistsClient({
+  artists,
+  experienceUrl,
+  requestedArtistSlug = '',
+  reviewSummary = null,
+}: Props) {
   const displayArtistCount = resolveTrustStatCount(
     artists.length,
     TRUST_STAT_PLACEHOLDERS.artists
   )
+  const voicesRatingCaption =
+    formatReviewRatingLabel(reviewSummary) ?? exploreArtistsContent.voices.ratingCaption
   const heroReveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
   const philosophyReveal = useLandingScrollReveal({ rootMargin: '0px 0px -12% 0px', mode: 'stagger' })
   const featuredReveal = useLandingScrollReveal({ rootMargin: '0px 0px -12% 0px' })
@@ -488,7 +498,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
               <div className={exploreStyles.voicesStars} aria-hidden>
                 ★★★★★
               </div>
-              <div className={exploreStyles.voicesCaption}>Rated 5.0 · 3,000+ collectors</div>
+              <div className={exploreStyles.voicesCaption}>{voicesRatingCaption}</div>
             </div>
           </div>
 

@@ -81,9 +81,16 @@ export function MeetTheLamp() {
             ref={videoRef}
             autoPlay
             muted
+            defaultMuted
             playsInline
             preload="auto"
             onEnded={onVideoEnded}
+            onLoadedMetadata={(e) => {
+              const el = e.currentTarget
+              el.muted = true
+              el.defaultMuted = true
+              el.volume = 0
+            }}
           >
             <source src={active.videoUrl} type="video/mp4" />
           </video>

@@ -3,6 +3,11 @@ export const TRUST_STAT_PLACEHOLDERS = {
   collectors: 3000,
   artists: 100,
   countries: 40,
+  /**
+   * Fallback star text only when live Yotpo data is unavailable.
+   * Prefer `formatReviewStarStat` / `formatReviewRatingLabel` from live aggregates —
+   * do not invent a review count here.
+   */
   ratingText: '★ 5.0',
 } as const
 

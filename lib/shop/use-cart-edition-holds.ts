@@ -108,6 +108,21 @@ export function formatCartEditionHoldRemaining(expiresAt: string, nowMs: number 
   return `${totalMinutes}m`
 }
 
+/** Live countdown string for hold UI — re-renders every minute while `expiresAt` is active. */
+export function useCartEditionHoldRemainingLive(expiresAt: string | null | undefined): string {
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!expiresAt) return
+    const id = window.setInterval(() => setTick((n) => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [expiresAt])
+
+  void tick
+  if (!expiresAt) return ''
+  return formatCartEditionHoldRemaining(expiresAt)
+}
+
 export function useCartEditionHolds(options: {
   cartProductGids: string[]
   streetEditionByProductId: Record<string, StreetEditionStatesRow>

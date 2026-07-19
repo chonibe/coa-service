@@ -61,6 +61,12 @@ export function ExperienceCartChip({
   const prevLampQuantity = useRef(0)
   const [hasExpanded, setHasExpanded] = useState(false)
   const lampQuantity = orderBarProps?.lampQuantity ?? 0
+  const artworkCount = orderBarProps?.selectedArtworks?.length ?? 0
+  /** Market-y nudge when lamp has only one face filled. */
+  const secondSideHint =
+    lampQuantity > 0 && artworkCount === 1
+      ? 'Your Street Lamp lights both sides — add a second artwork for the other face.'
+      : undefined
 
   const displayTotal = Math.max(0, total - (promoDiscount ?? 0))
   const formattedPrice = displayTotal > 0 ? `$${formatPriceCompact(displayTotal)}` : ''
@@ -102,10 +108,11 @@ export function ExperienceCartChip({
             ? `Browse collection – ${formattedPrice} (${itemCount} items)`
             : `Browse collection (${itemCount} items)`
       }
+      title={secondSideHint}
       aria-expanded={orderDrawerOpen}
       className={cn(
-        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-experience-cta hover:bg-experience-cta-hover text-white dark:text-neutral-900 self-center shrink-0 !min-h-0',
-        orderDrawerOpen && 'ring-2 ring-white/90 ring-offset-2 ring-offset-background',
+        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-experience-cta hover:bg-experience-cta-hover text-white dark:!text-neutral-900 self-center shrink-0 !min-h-0',
+        orderDrawerOpen && 'ring-2 ring-white/90 ring-offset-2 ring-offset-background dark:ring-neutral-900/25',
         className
       )}
       initial={
@@ -146,7 +153,7 @@ export function ExperienceCartChip({
             </motion.span>
           )}
         </AnimatePresence>
-        <CartBagIcon className="!w-[14px] !h-[14px] !min-w-0 !min-h-0 shrink-0" />
+        <CartBagIcon className="!w-[14px] !h-[14px] !min-w-0 !min-h-0 shrink-0 text-current" />
       </span>
     </motion.button>
   )

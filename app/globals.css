@@ -65,6 +65,37 @@
   pointer-events: none;
 }
 
+/* Mobile experience top-bar "The Collection" — soft pulse + wiggle until first tap */
+@keyframes collection-btn-attention {
+  0%,
+  68%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--experience-cta) 0%, transparent);
+  }
+  74% {
+    transform: scale(1.045) rotate(-2deg);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--experience-cta) 22%, transparent);
+  }
+  80% {
+    transform: scale(1.06) rotate(2deg);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--experience-cta) 14%, transparent);
+  }
+  86% {
+    transform: scale(1.04) rotate(-1.25deg);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--experience-cta) 10%, transparent);
+  }
+  92% {
+    transform: scale(1.02) rotate(0.75deg);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--experience-cta) 0%, transparent);
+  }
+}
+
+.animate-collection-btn-attention {
+  animation: collection-btn-attention 2.8s ease-in-out infinite;
+  will-change: transform;
+}
+
 /* Accessibility: Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -250,10 +281,11 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --experience-highlight:     #C21350;
     --experience-highlight-muted: #a01042;
     --experience-highlight-soft: #d43a6a;
-    /* Titles + primary CTAs — footer maroon family (light only; dark uses peach via .dark) */
+    /* Titles — footer maroon family (light only; dark uses peach via .dark) */
     --experience-title:         #251212;
-    --experience-cta:           #251212;
-    --experience-cta-hover:       #390000;
+    /* Primary CTAs — secondary red (matches highlight / gems / edition chips) */
+    --experience-cta:           #C21350;
+    --experience-cta-hover:     #a01042;
     /* Hero emphasis — burgundy from artwork / Impact header family (light mode) */
     --experience-hero-accent:   #390000;
     --experience-accent:          #251212;
@@ -642,21 +674,34 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   }
   html {
     font-family: var(--font-barlow), system-ui, sans-serif;
-    overflow-x: hidden;
+    /*
+     * Do NOT set overflow-x on html. Any non-visible overflow-x forces
+     * overflow-y to compute to auto, which (with a height constraint) turns
+     * html/body into nested scrollports and breaks window scrolling.
+     * Horizontal clip lives on body only; page shells (e.g. home-v2 .page)
+     * can also clip locally.
+     */
   }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-barlow), system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-fraunces), serif !important;
     font-weight: 600;
   }
+  /*
+   * Use min-height (not height: 100%) so the document can grow with content.
+   * height: 100% + overflow-x ≠ visible on html/body made body the scroll
+   * container while window.scrollY stayed 0 — home page appeared stuck /
+   * unscrollable and scroll-linked UI (nav, sticky CTAs) broke.
+   * Experience shells keep their own fixed/h-dvh overflow containment.
+   */
   html,
   body {
-    height: 100%;
+    min-height: 100%;
   }
 }
 

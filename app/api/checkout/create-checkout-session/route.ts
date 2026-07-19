@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       return_url: `${baseUrl}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       // Always set customer_email for PayPal compatibility (required by Stripe)
       ...(stripeCustomerId ? { customer: stripeCustomerId } : { customer_email: email.trim().toLowerCase() }),
-      payment_method_types: ['card', 'link', 'paypal'],
+      payment_method_types: ['card', 'paypal'],
       automatic_tax: { enabled: false },
       ...(discounts?.length
         ? { discounts }

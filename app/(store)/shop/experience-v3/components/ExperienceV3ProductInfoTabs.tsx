@@ -28,7 +28,7 @@ export function ExperienceV3ProductInfoTabs({ className }: { className?: string 
       <div
         role="tablist"
         aria-label={experienceV3Content.infoTabs.ariaLabel}
-        className="touch-pan-x flex gap-0.5 overflow-x-auto border-b border-border px-2 pt-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-0.5 overflow-x-auto border-b border-border px-2 pt-2 [touch-action:pan-x_pan-y] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {experienceV3ArtworkInfoTabs.map((tab) => (
           <TabButton

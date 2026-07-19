@@ -1,21 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Image from 'next/image'
-import { ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { getShopifyImageUrl } from '@/lib/shopify/image-url'
-import {
-  experienceQuickAddFabIconClass,
-  getExperienceQuickAddFabClass,
-} from '@/lib/shop/experience-artwork-card-surfaces'
-import { capitalizeFirstLetter, cn, formatPriceCompact } from '@/lib/utils'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
 import {
   buildExperienceRelatedArtworkSlider,
   type RelatedArtworkReason,
 } from '@/lib/shop/experience-related-artworks'
-import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { ExperienceArtworkGridCard } from '../../experience/components/ExperienceArtworkGridCard'
 
 function reasonLabel(reason: RelatedArtworkReason, matchedTags: string[]): string | null {
   if (reason === 'current') return 'Your pick'
@@ -116,7 +110,7 @@ export function ExperienceV3ArtistWorksSlider({
 
   return (
     <section
-      className="relative z-0 w-full shrink-0 border-t border-border bg-experience-surface py-8 md:py-10"
+      className="relative z-0 w-full shrink-0 border-t border-border bg-experience-surface pt-8 md:pt-10"
       aria-labelledby="experience-v3-artist-works-heading"
     >
       <div className="mx-auto w-full max-w-[min(100%,1200px)] px-3 md:px-6">
@@ -151,99 +145,31 @@ export function ExperienceV3ArtistWorksSlider({
 
         <div
           ref={scrollRef}
-          className="touch-pan-x flex gap-3 overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          /* pan-x pan-y: allow vertical page scroll while finger is over this strip (touch-pan-x alone blocks it) */
+          className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2 [touch-action:pan-x_pan-y] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {items.map(({ product, reason, matchedTags }) => {
-            const img =
-              getShopifyImageUrl(product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url, 480) ??
-              product.featuredImage?.url ??
-              product.images?.edges?.[0]?.node?.url ??
-              null
-            const price = experienceArtworkUnitUsd(product, {
-              lockedUsdByProductId: lockedArtworkPrices,
-              streetLadderUsdByProductId: streetLadderPrices,
-              seasonBandsFallback: streetPricingSeasonFallback,
-            })
-            const inCart = cartProductIds.includes(product.id)
+            const productKey = normalizeShopifyProductId(product.id) ?? product.id
+            const inCart = cartProductIds.some(
+              (id) => (normalizeShopifyProductId(id) ?? id) === productKey
+            )
             const isPreview = previewProductId === product.id
             const badge = reasonLabel(reason, matchedTags)
-            const displayTitle = capitalizeFirstLetter(product.title)
 
             return (
-              <article
+              <ExperienceArtworkGridCard
                 key={product.id}
-                className={cn(
-                  'group relative w-[min(42vw,168px)] shrink-0 sm:w-[180px]',
-                  isPreview && 'z-[1]'
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => onPreview(product)}
-                  className={cn(
-                    /* Border on the button; overflow/radius only on the image clip layer so the
-                       selection border stays on top of the cover image (no flashy outer ring). */
-                    'block w-full rounded-2xl border text-left transition-colors',
-                    isPreview
-                      ? 'border-experience-highlight/70'
-                      : 'border-border/80 hover:border-border'
-                  )}
-                >
-                  <div className="relative aspect-[14/20] w-full overflow-hidden rounded-t-2xl bg-experience-surface">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt={displayTitle}
-                        fill
-                        className="object-cover"
-                        sizes="180px"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
-                        No image
-                      </div>
-                    )}
-                    {badge ? (
-                      <span className="absolute left-2 top-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-black/65 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/90 backdrop-blur-sm">
-                        {badge}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="space-y-0.5 overflow-hidden rounded-b-2xl bg-experience-surface-2 px-2.5 py-2.5">
-                    <p className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
-                      {displayTitle}
-                    </p>
-                    {price > 0 ? (
-                      <p className="text-[11px] tabular-nums text-experience-highlight">
-                        ${formatPriceCompact(price)}
-                      </p>
-                    ) : null}
-                  </div>
-                </button>
-                {product.availableForSale !== false ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (!inCart) onQuickAdd(product)
-                    }}
-                    className={cn(
-                      'absolute bottom-[3.25rem] right-2 z-10 transition-transform',
-                      getExperienceQuickAddFabClass(inCart),
-                      !inCart && 'hover:scale-105'
-                    )}
-                    aria-label={inCart ? `${displayTitle} added to cart` : `Add ${displayTitle} to cart`}
-                    aria-pressed={inCart}
-                  >
-                    {inCart ? (
-                      <Check className={experienceQuickAddFabIconClass} strokeWidth={2.5} aria-hidden />
-                    ) : (
-                      <Plus className={experienceQuickAddFabIconClass} strokeWidth={2.5} aria-hidden />
-                    )}
-                  </button>
-                ) : null}
-              </article>
+                product={product}
+                layout="slider"
+                isPreview={isPreview}
+                isInCart={inCart}
+                onPreview={onPreview}
+                onQuickAdd={onQuickAdd}
+                badge={badge}
+                lockedArtworkPrices={lockedArtworkPrices}
+                streetLadderPrices={streetLadderPrices}
+                streetPricingSeasonFallback={streetPricingSeasonFallback}
+              />
             )
           })}
         </div>

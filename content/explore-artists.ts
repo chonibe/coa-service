@@ -73,7 +73,11 @@ export const exploreArtistsContent: ExploreArtistsContent = {
   voices: {
     eyebrow: 'Collector Voices',
     titleHtml: 'The work lands<br/><em>in real rooms.</em>',
-    ratingCaption: 'Rated 5.0 · 3,000+ collectors',
+    /**
+     * Fallback when live Yotpo summary is unavailable.
+     * Prefer `formatReviewRatingLabel` (e.g. "5.0 from 15 reviews").
+     */
+    ratingCaption: 'Collector reviews',
     items: [
       {
         quote:

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { landingFontVariables } from '../home-v2/landing-fonts'
 import { getStorePageContent } from '@/lib/content/site-content'
 import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
+import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollectionCartChip'
 import styles from './home-v3.module.css'
 
 const content = getStorePageContent('homeV2')
@@ -98,9 +99,12 @@ export default function HomeV3Page() {
           <Link href="/shop/faq">FAQ</Link>
           <Link href="/shop/contact">Contact</Link>
         </div>
-        <Link href="/experience" className={styles.navCta}>
-          Build your setup
-        </Link>
+        <div className={styles.navRight}>
+          <ShopCollectionCartChip experienceHref="/experience" />
+          <Link href="/experience" className={styles.navCta}>
+            Build your setup
+          </Link>
+        </div>
       </nav>
 
       <main>
@@ -109,10 +113,22 @@ export default function HomeV3Page() {
             <video
               autoPlay
               muted
+              defaultMuted
               loop
               playsInline
               preload="metadata"
               poster={'videoPosterUrl' in hero ? (hero as { videoPosterUrl?: string }).videoPosterUrl : undefined}
+              onLoadedMetadata={(e) => {
+                const el = e.currentTarget
+                el.muted = true
+                el.defaultMuted = true
+                el.volume = 0
+              }}
+              onPlay={(e) => {
+                const el = e.currentTarget
+                el.muted = true
+                el.volume = 0
+              }}
             >
               <source src={hero.videoUrl} type="video/mp4" />
             </video>
@@ -202,9 +218,9 @@ export default function HomeV3Page() {
           <div className={styles.sectionIntro}>
             <div className={styles.eyebrow}>{artistsWall.eyebrow}</div>
             <h2 className={styles.sectionTitle}>
-              100+ artists.
+              100+ Artists.
               <br />
-              <em>Across the roster.</em>
+              <em>{artistsWall.titleEmphasis}</em>
             </h2>
           </div>
           <div className={styles.artistGrid}>

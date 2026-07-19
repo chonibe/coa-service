@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { getStorePageContent } from '@/lib/content/site-content'
+import type { ReviewRatingSummary } from '@/lib/shop/format-review-rating-label'
+import { formatReviewRatingLabel } from '@/lib/shop/format-review-rating-label'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 const homeV2LandingContent = getStorePageContent('homeV2')
@@ -42,8 +44,17 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
+    video.muted = true
+    video.defaultMuted = true
+    video.volume = 0
+    video.setAttribute('playsinline', '')
+    video.setAttribute('webkit-playsinline', '')
     if (inView && preferPlay) {
-      video.play().catch(() => {})
+      const attempt = () => {
+        if (video.paused) void video.play().catch(() => {})
+      }
+      attempt()
+      requestAnimationFrame(attempt)
     } else {
       video.pause()
     }
@@ -56,10 +67,27 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
           ref={videoRef}
           autoPlay
           muted
+          defaultMuted
           loop
           playsInline
           preload="metadata"
           poster={poster}
+          onLoadedMetadata={(e) => {
+            const el = e.currentTarget
+            el.muted = true
+            el.defaultMuted = true
+            el.volume = 0
+          }}
+          onLoadedData={(e) => {
+            const el = e.currentTarget
+            el.muted = true
+            if (preferPlay && el.paused) void el.play().catch(() => {})
+          }}
+          onCanPlay={(e) => {
+            const el = e.currentTarget
+            el.muted = true
+            if (preferPlay && el.paused) void el.play().catch(() => {})
+          }}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         >
           <source src={src} type="video/mp4" />
@@ -72,11 +100,19 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
   )
 }
 
-export function TestimonialsSection() {
+export type TestimonialsSectionProps = {
+  reviewSummary?: ReviewRatingSummary | null
+}
+
+export function TestimonialsSection({ reviewSummary = null }: TestimonialsSectionProps) {
   const { testimonials } = homeV2LandingContent
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -6% 0px' })
   const featuredImage = testimonials.images.find((img) => img.featured)
   const photoGridImages = testimonials.images.filter((img) => !img.featured)
+  const ratingLabel = formatReviewRatingLabel(reviewSummary) ?? testimonials.ratingLabel
+  const ariaRating = formatReviewRatingLabel(reviewSummary)
+    ? ratingLabel
+    : `Collector reviews. ${testimonials.ratingLabel}`
 
   return (
     <section
@@ -94,14 +130,11 @@ export function TestimonialsSection() {
               collector homes.
             </h2>
           </div>
-          <div
-            className={styles.tmoTrustPill}
-            aria-label={`5 out of 5 stars. ${testimonials.ratingLabel}`}
-          >
+          <div className={styles.tmoTrustPill} aria-label={ariaRating}>
             <div className={styles.tmoTrustStars} aria-hidden>
               ★★★★★
             </div>
-            <div className={styles.tmoTrustSub}>{testimonials.ratingLabel}</div>
+            <div className={styles.tmoTrustSub}>{ratingLabel}</div>
           </div>
         </div>
 

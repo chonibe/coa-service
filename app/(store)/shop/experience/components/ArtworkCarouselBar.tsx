@@ -214,7 +214,7 @@ export function ArtworkCarouselBar({
   /** Empty lamp: primary entry to picker — labeled CTA instead of an unlabeled + control */
   const emptyCollectionCtaClass = cn(
     'relative flex w-full max-w-[min(100%,22rem)] items-center justify-center gap-2 rounded-2xl border px-5 py-4 text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] min-h-[3.25rem]',
-    'border-experience-cta bg-experience-cta text-white shadow-experience-cta/30 hover:bg-experience-cta-hover hover:border-experience-cta-hover dark:text-neutral-900',
+    'border-experience-cta bg-experience-cta text-white shadow-experience-cta/30 hover:bg-experience-cta-hover hover:border-experience-cta-hover',
     journeyNext === 'create_bundle' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
@@ -280,7 +280,7 @@ export function ArtworkCarouselBar({
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
-              'touch-pan-x flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent text-transparent scrollbar-hide pb-3',
+              'flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent text-transparent scrollbar-hide pb-3 [touch-action:pan-x_pan-y]',
               'pl-2 pr-2 sm:pl-3 sm:pr-3 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}

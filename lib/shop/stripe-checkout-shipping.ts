@@ -13,8 +13,8 @@ export const STANDARD_SHIPPING_UNDER_THRESHOLD_CENTS = 1000
 const STANDARD_DELIVERY_ESTIMATE: NonNullable<
   Stripe.Checkout.SessionCreateParams.ShippingOption['shipping_rate_data']['delivery_estimate']
 > = {
-  minimum: { unit: 'business_day', value: 5 },
-  maximum: { unit: 'business_day', value: 10 },
+  minimum: { unit: 'business_day', value: 9 },
+  maximum: { unit: 'business_day', value: 15 },
 }
 
 /**

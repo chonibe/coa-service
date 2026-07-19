@@ -5,7 +5,11 @@ import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import Image from 'next/image'
 import { Check, Plus } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useDragControls, type PanInfo } from 'framer-motion'
+import {
+  shopUnifiedTopBarDrawerHeightClass,
+  shopUnifiedTopBarTopInsetClass,
+} from '@/lib/shop/shop-unified-top-bar-layout'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
@@ -39,11 +43,72 @@ import {
   formatStreetArtworkListPrice,
   formatStreetNextSalesChipText,
 } from '@/lib/shop/experience-street-ladder-display'
+import { ExperienceArtworkGridCard } from './ExperienceArtworkGridCard'
 
 type SeasonTab = 'season1' | 'season2'
 
 /** Collection picker artist spotlight banner + "Explore full collection" CTA. Set true to re-enable. */
 const SHOW_ARTIST_SPOTLIGHT_IN_COLLECTION = false
+
+function SeasonSegmentControl({
+  activeSeason,
+  onSeasonChange,
+  theme,
+  size = 'compact',
+  className,
+}: {
+  activeSeason: SeasonTab
+  onSeasonChange: (season: SeasonTab) => void
+  theme: 'light' | 'dark'
+  size?: 'compact' | 'comfortable'
+  className?: string
+}) {
+  const isComfortable = size === 'comfortable'
+  return (
+    <div
+      className={cn(
+        'flex items-baseline',
+        isComfortable ? 'w-full justify-center gap-8' : 'gap-5',
+        className
+      )}
+      role="tablist"
+      aria-label="Season"
+    >
+      {(['season1', 'season2'] as const).map((season) => {
+        const isActive = activeSeason === season
+        const label = season === 'season1' ? 'Season 1' : 'Season 2'
+        return (
+          <button
+            key={season}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onSeasonChange(season)}
+            className={cn(
+              'font-serif tracking-tight transition-colors whitespace-nowrap',
+              isComfortable
+                ? isActive
+                  ? 'text-xl font-semibold md:text-2xl'
+                  : 'text-lg font-medium md:text-xl'
+                : isActive
+                  ? 'text-base font-semibold md:text-lg'
+                  : 'text-sm font-medium md:text-base',
+              isActive
+                ? theme === 'light'
+                  ? 'text-experience-title'
+                  : 'text-[#f0e8e8]'
+                : theme === 'light'
+                  ? 'text-experience-text-secondary hover:text-experience-text'
+                  : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
+            )}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 const MERGE_CONFETTI_COUNT = 16
 const MERGE_CONFETTI_COLORS = ['#C21350', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
@@ -218,10 +283,10 @@ function ArtworkCardV2({
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              if (!isSelected) onQuickAdd(product)
+              onQuickAdd(product)
             }}
-            className={cn('absolute top-2 right-2 z-20', getExperienceQuickAddFabClass(isSelected))}
-            aria-label={isSelected ? 'Added to cart' : 'Quick add to cart'}
+            className={cn('absolute top-1.5 right-1.5 z-20', getExperienceQuickAddFabClass(isSelected))}
+            aria-label={isSelected ? 'Remove from cart' : 'Quick add to cart'}
             aria-pressed={isSelected}
           >
             {isSelected ? (
@@ -369,7 +434,31 @@ function ArtworkCardV2({
 }
 
 /** Virtual row estimate; rows use measureElement (includes row vertical gap). */
-const ROW_HEIGHT_ESTIMATE = 500
+const ROW_HEIGHT_ESTIMATE_V2 = 420
+/** Artist-works grid card (14/20 image + title, artist, price ladder footer) in preview picker mode. */
+const ROW_HEIGHT_ESTIMATE_V3 = 380
+/** Sentinel row at list end — keeps scroll height continuous while paginating. */
+const SENTINEL_HEIGHT = 80
+/** Render extra rows above/below viewport so fast scroll does not hit empty space. */
+const VIRTUAL_OVERSCAN = 12
+/** IntersectionObserver prefetch — load next page before user reaches the bottom. */
+const LOAD_AHEAD_ROOT_MARGIN = '600px 0px'
+
+function PickerLoadMoreIndicator({ label = 'Loading artworks…' }: { label?: string }) {
+  return (
+    <div
+      className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500 dark:border-[#4a4040] dark:border-t-[#c4a0a0]"
+        aria-hidden
+      />
+      <span>{label}</span>
+    </div>
+  )
+}
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
@@ -380,6 +469,7 @@ interface ArtworkPickerSheetProps {
   onToggleSelect: (product: ShopifyProduct) => void
   onLoadMore?: () => void
   hasMore?: boolean
+  isLoadingMore?: boolean
   lastAddedProductId?: string | null
   activeSeason?: SeasonTab
   onSeasonChange?: (season: SeasonTab) => void
@@ -414,9 +504,17 @@ interface ArtworkPickerSheetProps {
   pickerCardMode?: 'toggleCart' | 'previewAndQuickAdd'
   onPreviewProduct?: (product: ShopifyProduct) => void
   onQuickAddProduct?: (product: ShopifyProduct) => void
+  /** V3 preview picker: highlights the artwork shown on the main stage. */
+  previewProductId?: string | null
+  lockedArtworkPrices?: Record<string, number>
+  streetLadderPrices?: Record<string, number>
   sheetVariant?: 'bottomSheet' | 'rightRail'
   presentation?: 'modal' | 'pushPanel'
   showDoneButton?: boolean
+  /** Desktop push panel: show collapse/expand toggle beside the collection header */
+  showPanelCollapseToggle?: boolean
+  panelExpanded?: boolean
+  onPanelCollapseToggle?: () => void
 }
 
 export function ArtworkPickerSheet({
@@ -428,6 +526,7 @@ export function ArtworkPickerSheet({
   onToggleSelect,
   onLoadMore,
   hasMore,
+  isLoadingMore = false,
   lastAddedProductId = null,
   activeSeason = 'season2',
   onSeasonChange,
@@ -456,16 +555,33 @@ export function ArtworkPickerSheet({
   pickerCardMode = 'toggleCart',
   onPreviewProduct,
   onQuickAddProduct,
+  previewProductId = null,
+  lockedArtworkPrices = {},
+  streetLadderPrices: streetLadderPricesProp,
   sheetVariant = 'bottomSheet',
   presentation = 'modal',
   showDoneButton = true,
+  showPanelCollapseToggle = false,
+  panelExpanded = true,
+  onPanelCollapseToggle,
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
   const prevSeasonRef = useRef(activeSeason)
+  const sheetDragControls = useDragControls()
   const { theme } = useExperienceTheme()
   const { pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const [isDesktopRail, setIsDesktopRail] = useState(false)
+
+  const handleSheetDragEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      // Match StoryViewer swipe-down dismiss thresholds.
+      if (info.offset.y > 100 || info.velocity.y > 500) {
+        onClose()
+      }
+    },
+    [onClose]
+  )
 
   useEffect(() => {
     const q = window.matchMedia('(min-width: 768px)')
@@ -497,6 +613,17 @@ export function ArtworkPickerSheet({
   }, [spotlightIdSet])
 
   const seasonBandsFallback: 1 | 2 = activeSeason === 'season2' ? 2 : 1
+
+  const streetLadderPrices = useMemo(() => {
+    if (streetLadderPricesProp && Object.keys(streetLadderPricesProp).length > 0) {
+      return streetLadderPricesProp
+    }
+    const fromEdition: Record<string, number> = {}
+    for (const [k, row] of Object.entries(streetEditionByProductId)) {
+      if (row.priceUsd != null && row.priceUsd > 0) fromEdition[k] = row.priceUsd
+    }
+    return fromEdition
+  }, [streetLadderPricesProp, streetEditionByProductId])
 
   const streetPricingForProduct = useCallback(
     (product: ShopifyProduct) => {
@@ -547,26 +674,9 @@ export function ArtworkPickerSheet({
         ? parseFloat(pickerLamp.priceRange?.minVariantPrice?.amount ?? '0')
         : 0
 
-  useEffect(() => {
-    if (!isOpen || !onLoadMore || !hasMore) return
-
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          onLoadMore()
-        }
-      },
-      { rootMargin: '200px' }
-    )
-
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [isOpen, onLoadMore, hasMore])
-
   const rows = useMemo(() => buildArtworkRowsByArtist(products), [products])
+  const rowCount = rows.length
+  const totalRows = rowCount + (hasMore ? 1 : 0)
 
   const cardSelectHandler = useCallback(
     (product: ShopifyProduct) => {
@@ -584,98 +694,136 @@ export function ArtworkPickerSheet({
 
   const isPreviewPickerMode = pickerCardMode === 'previewAndQuickAdd'
 
+  const rowHeightEstimate = isPreviewPickerMode ? ROW_HEIGHT_ESTIMATE_V3 : ROW_HEIGHT_ESTIMATE_V2
+
+  const spotlightBadgeForProduct = useCallback(
+    (productId: string) => {
+      if (!isInSpotlight(productId)) return null
+      if (spotlightData?.unlisted) return 'Early access'
+      return 'Featured Artist'
+    },
+    [isInSpotlight, spotlightData?.unlisted]
+  )
+
   const isRightRailDesktop = sheetVariant === 'rightRail' && isDesktopRail
 
   const virtualizer = useVirtualizer({
-    count: rows.length,
+    count: totalRows,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT_ESTIMATE,
-    overscan: 6,
+    estimateSize: (index) => (index >= rowCount ? SENTINEL_HEIGHT : rowHeightEstimate),
+    overscan: VIRTUAL_OVERSCAN,
   })
 
-  const docked = presentation === 'pushPanel' && isDesktopRail
+  const virtualRows = virtualizer.getVirtualItems()
+  const sentinelInWindow = virtualRows.some((vr) => vr.index >= rowCount)
 
-  const renderPickerPanelBody = () => (
+  useEffect(() => {
+    if (!isOpen || !onLoadMore || !hasMore || isLoadingMore) return
+
+    const sentinel = loadMoreSentinelRef.current
+    const scrollEl = scrollRef.current
+    if (!sentinel || !scrollEl) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) onLoadMore()
+      },
+      { root: scrollEl, rootMargin: LOAD_AHEAD_ROOT_MARGIN, threshold: 0 }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [isOpen, onLoadMore, hasMore, isLoadingMore, sentinelInWindow])
+
+  const docked = presentation === 'pushPanel' && isDesktopRail
+  const collapsedDockedRail = docked && showPanelCollapseToggle && !panelExpanded
+  const showSeasonInHeader = !!onSeasonChange
+
+  const renderPickerPanelBody = (opts?: { swipeDismiss?: boolean }) => (
     <>
-            {/* Header: mobile = title + Done; desktop = two-zone bar (title block | tools) */}
-            <div className={cn(
-              'flex-shrink-0 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))] border-b',
-              'md:flex-nowrap md:items-center md:justify-between md:gap-4 md:px-6 md:py-3.5',
-              theme === 'light' ? 'border-neutral-200' : 'border-neutral-800'
-            )}>
-              <div className="flex min-w-0 flex-1 flex-col md:flex-none md:max-w-[55%]">
-                <h2 className={cn(
-                  'text-base font-semibold leading-tight',
-                  theme === 'light' ? 'text-neutral-900' : 'text-foreground'
-                )}>
-                  Choose your Art
-                </h2>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0 md:gap-3">
-              {onSeasonChange && (
-                <div className={cn(
-                  'hidden md:flex rounded-lg border p-0.5 flex-shrink-0',
-                  theme === 'light'
-                    ? 'border-neutral-200 bg-neutral-50'
-                    : 'border-[#2c2828] bg-[#201c1c]/50'
-                )}>
-                  <button
-                    type="button"
-                    onClick={() => onSeasonChange('season1')}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                      activeSeason === 'season1'
-                        ? theme === 'light'
-                          ? 'bg-card text-foreground shadow-sm'
-                          : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
-                        : theme === 'light'
-                          ? 'text-neutral-500 hover:text-neutral-700'
-                          : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
-                    )}
-                  >
-                    Season 1
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onSeasonChange('season2')}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                      activeSeason === 'season2'
-                        ? theme === 'light'
-                          ? 'bg-card text-foreground shadow-sm'
-                          : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
-                        : theme === 'light'
-                          ? 'text-neutral-500 hover:text-neutral-700'
-                          : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
-                    )}
-                  >
-                    Season 2
-                  </button>
-                </div>
+            {/* Header: toolbar row (seasons + tools) · title row (centered) */}
+            <div
+              className={cn(
+                'relative z-10 shrink-0 border-b border-border bg-popover',
+                theme === 'dark' && 'border-[#2c2828]',
+                opts?.swipeDismiss && 'touch-none'
               )}
-              {showDoneButton && (
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Done"
+              onPointerDown={
+                opts?.swipeDismiss
+                  ? (e) => {
+                      // Drag from header/handle only so the artwork list can still scroll.
+                      sheetDragControls.start(e)
+                    }
+                  : undefined
+              }
+            >
+              {opts?.swipeDismiss ? (
+                <div className="flex justify-center pt-2 pb-0.5" aria-hidden>
+                  <div
+                    className={cn(
+                      'h-1 w-10 rounded-full',
+                      theme === 'light' ? 'bg-neutral-300' : 'bg-[#5a5050]'
+                    )}
+                  />
+                </div>
+              ) : null}
+              <div
                 className={cn(
-                  'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-semibold -my-2 transition-colors shrink-0',
-                  theme === 'light'
-                    ? 'text-experience-highlight hover:text-experience-highlight-muted hover:bg-neutral-100'
-                    : 'text-[#60A5FA] hover:text-[#93C5FD] hover:bg-[#262222]'
+                  'flex h-12 items-center justify-between gap-4 px-4',
+                  // Sheet sits below the fixed unified top bar on mobile — do not re-apply
+                  // safe-area top padding (that was pushing Done under the bar visually before).
+                  docked && 'pb-2'
                 )}
               >
-                Done
-              </button>
-              )}
+                <div className="flex shrink-0 items-center">
+                  {showSeasonInHeader ? (
+                    <div className="hidden md:block">
+                      <SeasonSegmentControl
+                        activeSeason={activeSeason}
+                        onSeasonChange={onSeasonChange}
+                        theme={theme}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="relative z-20 flex shrink-0 items-center justify-end gap-2">
+                  {showDoneButton ? (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      aria-label="Done"
+                      className={cn(
+                        'inline-flex h-10 min-w-[3.25rem] shrink-0 touch-manipulation items-center justify-center rounded-lg px-3.5 text-sm font-semibold transition-colors',
+                        theme === 'light'
+                          ? 'text-experience-highlight hover:bg-muted/60 hover:text-experience-highlight-muted'
+                          : 'text-[#60A5FA] hover:bg-[#262222] hover:text-[#93C5FD]'
+                      )}
+                    >
+                      Done
+                    </button>
+                  ) : null}
+                  {docked && !showPanelCollapseToggle ? (
+                    <span className="hidden size-8 shrink-0 lg:block" aria-hidden />
+                  ) : null}
+                </div>
               </div>
+
+              {!docked ? (
+                <div className="flex items-center justify-center px-4 pb-3 pt-0.5">
+                  <h2 className="whitespace-nowrap text-base font-semibold leading-none text-foreground">
+                    Choose your Art
+                  </h2>
+                </div>
+              ) : null}
             </div>
 
             <div
               ref={scrollRef}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3 md:px-5 md:py-4"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3"
             >
-              <div className="md:mx-auto md:w-full md:max-w-[min(65vh,520px)]">
+              <div className="mx-auto w-full max-w-[min(65vh,520px)]">
               {/* Lamp promo when cart has no lamp; otherwise artist spotlight */}
               {showLampPromoInPicker && pickerLamp ? (
                 <div className="mb-3">
@@ -710,7 +858,34 @@ export function ArtworkPickerSheet({
                   position: 'relative',
                 }}
               >
-                {virtualizer.getVirtualItems().map((virtualRow) => {
+                {virtualRows.map((virtualRow) => {
+                  if (virtualRow.index >= rowCount) {
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        ref={(node) => {
+                          loadMoreSentinelRef.current = node
+                          virtualizer.measureElement(node)
+                        }}
+                        data-index={virtualRow.index}
+                        className="absolute top-0 left-0 flex w-full items-center justify-center"
+                        style={{
+                          transform: `translateY(${virtualRow.start}px)`,
+                          minHeight: SENTINEL_HEIGHT,
+                        }}
+                      >
+                        {isLoadingMore ? (
+                          <PickerLoadMoreIndicator />
+                        ) : (
+                          <div
+                            className="h-1.5 w-16 rounded-full bg-neutral-200/70 animate-pulse dark:bg-[#3a3434]/80"
+                            aria-hidden
+                          />
+                        )}
+                      </div>
+                    )
+                  }
+
                   const row = rows[virtualRow.index]
                   const product1 = row[0]
                   const product2 = row[1]
@@ -730,18 +905,86 @@ export function ArtworkPickerSheet({
                       ref={virtualizer.measureElement}
                       className={cn(
                         'absolute top-0 left-0 w-full',
-                        isPairRow && shouldMerge ? 'py-4 md:py-6' : 'pb-10 md:pb-14'
+                        isPairRow && shouldMerge ? 'py-3' : 'pb-3'
                       )}
                       style={{
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                     >
-                      {isPairRow ? (
+                      {isPreviewPickerMode ? (
+                        isPairRow ? (
+                          <div className="relative flex items-stretch gap-3">
+                            {product1 && (
+                              <div className="min-w-0 flex-1">
+                                <ExperienceArtworkGridCard
+                                  key={product1.id}
+                                  product={product1}
+                                  layout="grid"
+                                  isPreview={previewProductId === product1.id}
+                                  isInCart={!!p1Selected}
+                                  onPreview={cardSelectHandler}
+                                  onQuickAdd={quickAddHandler}
+                                  badge={spotlightBadgeForProduct(product1.id)}
+                                  lockedArtworkPrices={lockedArtworkPrices}
+                                  streetLadderPrices={streetLadderPrices}
+                                  streetPricing={streetPricingForProduct(product1)}
+                                  streetPricingSeasonFallback={seasonBandsFallback}
+                                  isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                                  priorityLoad={virtualRow.index < 3}
+                                />
+                              </div>
+                            )}
+                            {product2 && (
+                              <div className="min-w-0 flex-1">
+                                <ExperienceArtworkGridCard
+                                  key={product2.id}
+                                  product={product2}
+                                  layout="grid"
+                                  isPreview={previewProductId === product2.id}
+                                  isInCart={!!p2Selected}
+                                  onPreview={cardSelectHandler}
+                                  onQuickAdd={quickAddHandler}
+                                  badge={spotlightBadgeForProduct(product2.id)}
+                                  lockedArtworkPrices={lockedArtworkPrices}
+                                  streetLadderPrices={streetLadderPrices}
+                                  streetPricing={streetPricingForProduct(product2)}
+                                  streetPricingSeasonFallback={seasonBandsFallback}
+                                  isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
+                                  priorityLoad={virtualRow.index < 3}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="relative flex justify-center">
+                            {product1 && (
+                              <div className="w-1/2 max-w-[300px]">
+                                <ExperienceArtworkGridCard
+                                  key={product1.id}
+                                  product={product1}
+                                  layout="grid"
+                                  isPreview={previewProductId === product1.id}
+                                  isInCart={!!p1Selected}
+                                  onPreview={cardSelectHandler}
+                                  onQuickAdd={quickAddHandler}
+                                  badge={spotlightBadgeForProduct(product1.id)}
+                                  lockedArtworkPrices={lockedArtworkPrices}
+                                  streetLadderPrices={streetLadderPrices}
+                                  streetPricing={streetPricingForProduct(product1)}
+                                  streetPricingSeasonFallback={seasonBandsFallback}
+                                  isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                                  priorityLoad={virtualRow.index < 3}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : isPairRow ? (
                         <div
                           className={cn(
                             'relative flex items-stretch rounded-xl overflow-hidden',
                             experienceArtistRowDefaultClass,
-                            !shouldMerge && 'gap-1.5 md:gap-2'
+                            !shouldMerge && 'gap-3'
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -846,58 +1089,26 @@ export function ArtworkPickerSheet({
                   </div>
                 )}
 
-              {hasMore && <div ref={sentinelRef} className="h-20" />}
               </div>
             </div>
 
-            {/* Mobile bottom bar: Season 1/2 + Filter */}
-            {onSeasonChange && (
-              <div className={cn(
-                'md:hidden flex-shrink-0 flex items-center gap-3 px-4 py-3 border-t border-border bg-experience-surface/80 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'
-              )}>
-                {onSeasonChange && (
-                  <div className={cn(
-                    'flex rounded-lg border p-0.5 flex-1',
-                    theme === 'light'
-                      ? 'border-border bg-card'
-                      : 'border-[#2c2828] bg-[#201c1c]/50'
-                  )}>
-                    <button
-                      type="button"
-                      onClick={() => onSeasonChange('season1')}
-                      className={cn(
-                        'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                        activeSeason === 'season1'
-                          ? theme === 'light'
-                            ? 'bg-card text-foreground shadow-sm'
-                            : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
-                          : theme === 'light'
-                            ? 'text-neutral-500 hover:text-neutral-700'
-                            : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
-                      )}
-                    >
-                      Season 1
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onSeasonChange('season2')}
-                      className={cn(
-                        'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                        activeSeason === 'season2'
-                          ? theme === 'light'
-                            ? 'bg-card text-foreground shadow-sm'
-                            : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
-                          : theme === 'light'
-                            ? 'text-neutral-500 hover:text-neutral-700'
-                            : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
-                      )}
-                    >
-                      Season 2
-                    </button>
-                  </div>
+            {/* Mobile bottom bar: Season 1/2 */}
+            {onSeasonChange ? (
+              <div
+                className={cn(
+                  'md:hidden flex shrink-0 items-center gap-3 border-t border-border bg-experience-surface/80 px-4 py-3',
+                  'pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'
                 )}
+              >
+                <SeasonSegmentControl
+                  activeSeason={activeSeason}
+                  onSeasonChange={onSeasonChange}
+                  theme={theme}
+                  size="comfortable"
+                  className="w-full"
+                />
               </div>
-            )}
+            ) : null}
 
             {/* Filter panel overlay */}
             {filterOpen && onFilterClose && filters && onFiltersChange && (
@@ -924,8 +1135,10 @@ export function ArtworkPickerSheet({
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          'flex h-full min-h-0 w-full flex-col overflow-hidden border-l border-border bg-popover text-popover-foreground shadow-2xl',
-          'lg:w-[min(440px,42vw)] lg:max-w-[min(440px,42vw)]'
+          'flex h-full min-h-0 w-full flex-col overflow-hidden text-popover-foreground',
+          collapsedDockedRail
+            ? 'bg-transparent shadow-none'
+            : 'border-l border-border bg-popover shadow-2xl'
         )}
       >
         {renderPickerPanelBody()}
@@ -933,6 +1146,10 @@ export function ArtworkPickerSheet({
     )
   }
 
+
+  // Mobile bottom sheet: sit below ShopUnifiedTopBar (z-[122]) so Done stays visible and
+  // the Collection pill can still toggle close. Desktop rail / centered modal unchanged.
+  const enableSwipeDismiss = !isRightRailDesktop && !isDesktopRail
 
   return (
     <AnimatePresence>
@@ -943,14 +1160,21 @@ export function ArtworkPickerSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+            className={cn(
+              'fixed inset-x-0 bottom-0 z-[70] bg-black/60 backdrop-blur-sm',
+              // Leave the fixed top bar interactive (Collection toggle).
+              shopUnifiedTopBarTopInsetClass,
+              'md:inset-0 md:top-0'
+            )}
             onClick={onClose}
           />
 
           <div
             className={cn(
-              'fixed inset-0 z-[71] flex pointer-events-none',
-              'items-end justify-center md:px-4 md:pb-5',
+              'fixed inset-x-0 bottom-0 z-[71] flex pointer-events-none',
+              shopUnifiedTopBarTopInsetClass,
+              'items-end justify-center',
+              'md:inset-0 md:top-0 md:px-4 md:pb-5',
               sheetVariant === 'rightRail' && 'md:items-stretch md:justify-end md:p-0'
             )}
           >
@@ -959,16 +1183,25 @@ export function ArtworkPickerSheet({
               animate={isRightRailDesktop ? { x: 0 } : { y: 0 }}
               exit={isRightRailDesktop ? { x: '100%' } : { y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              drag={enableSwipeDismiss ? 'y' : false}
+              dragControls={enableSwipeDismiss ? sheetDragControls : undefined}
+              dragListener={false}
+              dragConstraints={enableSwipeDismiss ? { top: 0, bottom: 0 } : undefined}
+              dragElastic={enableSwipeDismiss ? { top: 0, bottom: 0.55 } : undefined}
+              onDragEnd={enableSwipeDismiss ? handleSheetDragEnd : undefined}
               className={cn(
                 'flex w-full flex-col pointer-events-auto shadow-2xl bg-popover text-popover-foreground',
-                'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
+                'max-w-full rounded-t-3xl overflow-hidden',
                 !isRightRailDesktop &&
-                  'md:max-w-[min(92vw,768px)] md:rounded-2xl md:h-auto md:min-h-[65vh] md:max-h-[min(92vh,900px)]',
+                  cn(
+                    shopUnifiedTopBarDrawerHeightClass,
+                    'md:max-w-[min(92vw,768px)] md:rounded-2xl md:h-auto md:min-h-[65vh] md:max-h-[min(92vh,900px)]'
+                  ),
                 isRightRailDesktop &&
                   'md:h-full md:max-h-none md:max-w-[min(440px,42vw)] md:rounded-none md:rounded-l-3xl'
               )}
             >
-            {renderPickerPanelBody()}
+            {renderPickerPanelBody({ swipeDismiss: enableSwipeDismiss })}
             </motion.div>
           </div>
         </>

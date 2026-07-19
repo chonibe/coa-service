@@ -798,7 +798,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             />
           )}
           {!hideCta && (
-            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900', journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS)}>
+            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-experience-cta text-white hover:bg-experience-cta-hover', journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS)}>
               {isSelected ? <><Check className="w-4 h-4" />Added to your collection — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
             </button>
           )}
@@ -831,7 +831,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          /* Above OrderBar checkout drawer (z-[90–92]) so detail can open from cart */
+          /* Cart drawer closes before detail opens from cart lines; z-[95] stays below OrderBar (z-[200–202]) */
           'fixed inset-0 z-[95] pointer-events-none',
           isSlideout ? 'flex justify-start items-center' : 'flex items-end'
         )}
@@ -1260,7 +1260,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                             ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]'
                             : isSoldOut
                               ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                              : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
+                              : 'bg-experience-cta text-white hover:bg-experience-cta-hover',
                           journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
                         )}
                       >
@@ -1762,7 +1762,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]'
                       : isSoldOut
                         ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                        : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
+                        : 'bg-experience-cta text-white hover:bg-experience-cta-hover',
                     journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
                   )}
                 >

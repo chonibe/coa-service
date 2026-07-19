@@ -1541,7 +1541,7 @@ export function ExperienceV2Client({
         productSpecs={
           displayedProduct?.id === lamp.id
             ? [
-                { title: 'Dimensions', icon: 'ruler' as const, items: ['21 × 14 × 7 cm ~ 8.1 × 5.7 × 2.7 in'] },
+                { title: 'Dimensions', icon: 'ruler' as const, items: ['21.5×14.5×7 cm ~ 8.5×5.7×2.8 in'] },
                 { title: 'Weight', icon: 'scale' as const, items: ['1.1 kg ~ 2.4 lb'] },
                 {
                   title: 'Materials',
@@ -1637,6 +1637,7 @@ export function ExperienceV2Client({
         onToggleSelect={handleToggleSelect}
         lastAddedProductId={lastAddedProductId}
         hasMore={hasMore}
+        isLoadingMore={loadingMore}
         onLoadMore={() => loadMoreForSeason(activeSeason)}
         activeSeason={activeSeason}
         onSeasonChange={handleSeasonChange}
@@ -1707,7 +1708,7 @@ export function ExperienceV2Client({
           productSpecs={
             detailProduct.id === lamp.id
               ? [
-                  { title: 'Dimensions', icon: 'ruler' as const, items: ['21 × 14 × 7 cm ~ 8.1 × 5.7 × 2.7 in'] },
+                  { title: 'Dimensions', icon: 'ruler' as const, items: ['21.5×14.5×7 cm ~ 8.5×5.7×2.8 in'] },
                   { title: 'Weight', icon: 'scale' as const, items: ['1.1 kg ~ 2.4 lb'] },
                   {
                     title: 'Materials',

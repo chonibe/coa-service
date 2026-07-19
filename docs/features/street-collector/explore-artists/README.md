@@ -15,7 +15,7 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 | Featured ordering + location | [`lib/shop/explore-artists-order.ts`](../../../../lib/shop/explore-artists-order.ts) — uses [`content/street-collector.ts`](../../../../content/street-collector.ts) `featuredArtists.collections` |
 | Artists JSON API | [`app/api/shop/artists/route.ts`](../../../../app/api/shop/artists/route.ts) |
 | Short URL | [`middleware.ts`](../../../../middleware.ts) — `/explore-artists` → `/shop/explore-artists` |
-| Home-v2 links | [`content/home-v2-landing.ts`](../../../../content/home-v2-landing.ts) `urls.exploreArtists`; [`ArtistsWall`](../../../../app/(store)/shop/home-v2/components/ArtistsWall.tsx); [`FinalCta`](../../../../app/(store)/shop/home-v2/components/FinalCta.tsx) secondary CTA |
+| Home-v2 links | [`content/home-v2-landing.ts`](../../../../content/home-v2-landing.ts) `urls.exploreArtists`; [`ArtistsWall`](../../../../app/(store)/shop/home-v2/components/ArtistsWall.tsx) (video marquee + “View all artists” CTA; no name roster); [`FinalCta`](../../../../app/(store)/shop/home-v2/components/FinalCta.tsx) secondary CTA |
 
 ## Data sources
 
@@ -46,6 +46,8 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.8 | 2026-07-19 | Voices rating caption uses live Yotpo aggregate when available (`formatReviewRatingLabel` via [`getYotpoStoreReviewSummary`](../../../../lib/shop/yotpo-store-reviews.ts)); fallback copy never invents a review count ([`ExploreArtistsClient`](../../../../app/(store)/shop/explore-artists/components/ExploreArtistsClient.tsx)). |
+| 1.1.7 | 2026-07-11 | Home-v2 [`ArtistsWall`](../../../../app/(store)/shop/home-v2/components/ArtistsWall.tsx): headline **From Around the World** (was “Across the roster”); removed dense name-badge roster marquee; kept video marquee + centered explore CTA. Content: [`content/home-v2-landing.ts`](../../../../content/home-v2-landing.ts) `artistsWall`. |
 | 1.1.6 | 2026-04-06 | **saturn_png** paired to Shopify collection `686811218306` (handle `saturn-png`) in [`vendor_collections`](../../../../supabase/migrations/20260406120000_vendor_collection_saturn_png.sql) so artist profile APIs resolve collection description and products via `getCollectionById`. Apply migration on Supabase when deploying. |
 | 1.1.5 | 2026-04-03 | Optional Instagram **Business Discovery** in `GET /api/shop/artists/[slug]` when caller id + token set (`INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` **or** `INSTAGRAM_BUSINESS_ID`; `INSTAGRAM_ACCESS_TOKEN` **or** `INSTAGRAM_MANUAL_ACCESS_TOKEN`). Fills grid if `instagram_showcase` empty. See [`artist-profile-content-spec.md`](../artist-profile-content-spec.md) §7. |
 | 1.1.4 | 2026-04-03 | Instagram tab: **native** grid from `custom.instagram_showcase` image URLs only (no iframe); optional per-tile `link`; empty state + profile CTA when no images. See [`artist-profile-content-spec.md`](../artist-profile-content-spec.md) §7. |

@@ -39,12 +39,28 @@ export function getDefaultGalleryIndex(imageCount: number): number {
   return imageCount >= 2 ? 1 : 0
 }
 
+/**
+ * Picks the first-load preview artwork when there is no stronger signal
+ * (`?artwork=` deep link / `initialSelectedArtwork`).
+ *
+ * Prefers the in-season (season 2) pool when non-empty, else season 1.
+ * Among that pool, prefers `availableForSale !== false`, then uniform random.
+ * Cart / lamp-preview persistence does not override this — but last-viewed artwork
+ * (localStorage) does on the client when there is no `?artwork=` deep link.
+ *
+ * @param random - injectable RNG in `[0, 1)` for tests; defaults to `Math.random`.
+ */
 export function pickInitialPreviewProduct(
   productsSeason1: ShopifyProduct[],
-  productsSeason2: ShopifyProduct[]
+  productsSeason2: ShopifyProduct[],
+  random: () => number = Math.random
 ): ShopifyProduct | null {
-  if (productsSeason2.length > 0) return productsSeason2[0] ?? null
-  return productsSeason1[0] ?? null
+  const pool = productsSeason2.length > 0 ? productsSeason2 : productsSeason1
+  if (pool.length === 0) return null
+  const purchasable = pool.filter((p) => p.availableForSale !== false)
+  const candidates = purchasable.length > 0 ? purchasable : pool
+  const index = Math.floor(random() * candidates.length)
+  return candidates[index] ?? null
 }
 
 export function getGalleryHeroImageUrl(

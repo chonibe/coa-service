@@ -409,7 +409,8 @@ function PaymentFormInner({
           <PaymentElement
             options={{
               layout: 'tabs',
-              paymentMethodOrder: ['google_pay', 'card', 'link', 'paypal'],
+              paymentMethodOrder: ['google_pay', 'apple_pay', 'card', 'paypal'],
+              wallets: { link: 'never' },
             }}
             onChange={handlePaymentChange}
           />
@@ -525,7 +526,8 @@ function PaymentFormInner({
         <PaymentElement
           options={{
             layout: 'tabs',
-            paymentMethodOrder: ['google_pay', 'card', 'link', 'paypal'],
+            paymentMethodOrder: ['google_pay', 'apple_pay', 'card', 'paypal'],
+            wallets: { link: 'never' },
           }}
           onChange={handlePaymentChange}
         />

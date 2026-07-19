@@ -118,6 +118,7 @@ function StickyThumb({
   onDetailPress,
   onSplinePreviewPress,
   isSplinePreviewSelected,
+  flush = false,
 }: {
   product: ShopifyProduct
   isLamp: boolean
@@ -127,6 +128,8 @@ function StickyThumb({
   /** Select this item on the Spline preview (sticky thumbnail tap). */
   onSplinePreviewPress?: () => void
   isSplinePreviewSelected?: boolean
+  /** Inline spline footer — thumb flush in section; border only, no nested fill. */
+  flush?: boolean
 }) {
   const raw = firstImageUrl(product)
   const src = raw ? (getShopifyImageUrl(raw, IMAGE_REQUEST_PX) ?? raw) : null
@@ -135,7 +138,8 @@ function StickyThumb({
   const frame = cn(
     'relative shrink-0 overflow-hidden rounded-[15px]',
     /* Same portrait ratio as carousel thumbs; compact width for the sticky row */
-    'w-9 aspect-[14/20] sm:w-10'
+    'w-9 aspect-[14/20] sm:w-10',
+    flush && 'border border-border'
   )
 
   const interactiveFrame = cn(
@@ -300,7 +304,7 @@ export function ExperienceCheckoutStickyBar({
   )
 
   const experiencePrimaryFillCtaClass =
-    'border-experience-cta bg-experience-cta text-white shadow-experience-cta/30 hover:bg-experience-cta-hover hover:border-experience-cta-hover dark:text-neutral-900'
+    'border-experience-cta bg-experience-cta text-white shadow-experience-cta/30 hover:bg-experience-cta-hover hover:border-experience-cta-hover'
 
   const createBundleCtaClass = cn(
     'relative flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
@@ -326,7 +330,7 @@ export function ExperienceCheckoutStickyBar({
 
   const checkoutPillClass = cn(
     'relative z-[3] flex w-full items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform active:scale-[0.98] md:px-8',
-    'bg-experience-cta text-white hover:bg-experience-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-experience-cta dark:text-neutral-900'
+    'bg-experience-cta text-white hover:bg-experience-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-experience-cta'
   )
 
   const handleCheckoutPillClick = () => {
@@ -367,11 +371,11 @@ export function ExperienceCheckoutStickyBar({
     return `Your collection summary: ${parts.join(', ')}`
   }, [lampQuantity, selectedArtworks.length, hasArtworks, stripMode])
 
+  const isInlineBar = barPosition === 'inline'
+
   const barShellClass =
-    barPosition === 'inline'
-      ? cn(
-          'relative z-[5] w-full border-t border-border bg-background/95 text-foreground backdrop-blur-md'
-        )
+    isInlineBar
+      ? cn('relative z-[5] w-full border-t border-border/50 bg-transparent text-foreground')
       : cn(
           'fixed bottom-0 left-0 right-0 z-[52]',
           barPosition === 'fixed' && 'bg-transparent text-foreground',
@@ -458,8 +462,20 @@ export function ExperienceCheckoutStickyBar({
                 )}
               >
                 {showThumbnails ? (
-                  <div className="min-w-0 flex-1 rounded-2xl border border-experience-cta/60 bg-background/80 px-3 py-2">
-                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-experience-cta">
+                  <div
+                    className={cn(
+                      'min-w-0 flex-1',
+                      isInlineBar
+                        ? 'py-0.5'
+                        : 'rounded-2xl border border-experience-cta/60 bg-background/80 px-3 py-2'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-experience-cta',
+                        isInlineBar && 'mb-1.5'
+                      )}
+                    >
                       Your selected items
                     </div>
                     <div className="min-w-0 overflow-x-auto scrollbar-hide pt-1">
@@ -480,6 +496,7 @@ export function ExperienceCheckoutStickyBar({
                                   product={slot.product}
                                   isLamp={slot.isLamp}
                                   theme={theme}
+                                  flush={isInlineBar}
                                   onSplinePreviewPress={
                                     onSelectThumbnailForSpline
                                       ? () => onSelectThumbnailForSpline(slot.product)
@@ -506,12 +523,13 @@ export function ExperienceCheckoutStickyBar({
                   </div>
                 ) : null}
                 {showPresentedArtwork && presentedArtwork ? (
-                  <div className="shrink-0 rounded-2xl border border-border/70 bg-background/80 px-2.5 py-2">
+                  <div className={cn('shrink-0', !isInlineBar && 'rounded-2xl border border-border/70 bg-background/80 px-2.5 py-2')}>
                     <div className="flex items-center gap-2">
                       <StickyThumb
                         product={presentedArtwork}
                         isLamp={false}
                         theme={theme}
+                        flush={isInlineBar}
                         onSplinePreviewPress={
                           onSelectThumbnailForSpline
                             ? () => onSelectThumbnailForSpline(presentedArtwork)
@@ -522,7 +540,12 @@ export function ExperienceCheckoutStickyBar({
                           previewSelectedProductId === presentedArtwork.id
                         }
                       />
-                      <span className="max-w-[140px] truncate rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground ring-1 ring-border/70">
+                      <span
+                        className={cn(
+                          'max-w-[140px] truncate rounded-full px-3 py-1 text-xs font-medium text-foreground ring-1 ring-border/70',
+                          isInlineBar ? 'bg-transparent' : 'bg-background'
+                        )}
+                      >
                         {presentedArtwork.title}
                       </span>
                     </div>

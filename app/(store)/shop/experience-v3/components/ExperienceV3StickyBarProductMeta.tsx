@@ -7,6 +7,8 @@ export type ExperienceV3StickyBarProductMetaProps = {
   artistName?: string | null
   reserveEditionLabel?: string | null
   title?: string | null
+  /** e.g. "Lamp + artwork" when the sticky bar reflects a bundle selection. */
+  bundleLabel?: string | null
   align?: 'left' | 'center'
   className?: string
 }
@@ -16,10 +18,11 @@ export function ExperienceV3StickyBarProductMeta({
   artistName,
   reserveEditionLabel,
   title,
+  bundleLabel,
   align = 'center',
   className,
 }: ExperienceV3StickyBarProductMetaProps) {
-  if (!reserveEditionLabel && !artistName && !title) return null
+  if (!reserveEditionLabel && !artistName && !title && !bundleLabel) return null
 
   return (
     <div
@@ -32,7 +35,7 @@ export function ExperienceV3StickyBarProductMeta({
       {reserveEditionLabel ? (
         <div
           className={cn(
-            'inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-experience-surface/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground',
+            'inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-experience-surface/80 px-2.5 py-1 text-[10px] font-normal uppercase tracking-[0.12em] text-muted-foreground',
             align === 'center' && 'mx-auto'
           )}
         >
@@ -47,6 +50,9 @@ export function ExperienceV3StickyBarProductMeta({
       ) : null}
       {title ? (
         <p className="truncate text-sm font-semibold leading-snug text-foreground">{title}</p>
+      ) : null}
+      {bundleLabel ? (
+        <p className="truncate text-[10px] font-medium text-experience-highlight">{bundleLabel}</p>
       ) : null}
     </div>
   )

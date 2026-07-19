@@ -82,7 +82,7 @@ export async function GET(
     mode: 'payment',
     success_url: successUrl,
     cancel_url: cancelUrl,
-    payment_method_types: ['card', 'paypal', 'link'],
+    payment_method_types: ['card', 'paypal'],
     line_items: [
       {
         price_data: {

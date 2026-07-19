@@ -1,10 +1,27 @@
 'use client'
 
+import { useMemo } from 'react'
 import Image from 'next/image'
 import { Gem } from 'lucide-react'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { getStorePageContent } from '@/lib/content/site-content'
+import type { CartEditionHold } from '@/lib/shop/cart-edition-hold-types'
+import { resolveCartEditionHoldDisplayNumber } from '@/lib/shop/compute-cart-edition-reserve'
+import {
+  formatEditionHoldCompactLineParts,
+} from '@/lib/shop/format-edition-hold-display'
+import { useCartEditionHoldRemainingLive } from '@/lib/shop/use-cart-edition-holds'
+import {
+  EditionHoldCompactLineText,
+} from '../../experience-v2/components/EditionHoldIndicator'
+import {
+  experienceV3AddCtaClass,
+  experienceV3AddCtaDisabledClass,
+} from '@/lib/shop/street-collector-cta'
+import { EXPERIENCE_PURCHASE_HINTS } from '@/lib/shop/experience-purchase-hints'
+import { ExperienceMeaningHint } from '../../experience-v2/components/ExperienceMeaningHint'
 import { ExperienceTrustStrip } from './ExperienceTrustStrip'
+import { ExperienceV3StickyBarProductMeta } from './ExperienceV3StickyBarProductMeta'
 import type { ExperienceV3BundleMode } from './ExperienceV3LampBundleCard'
 
 const experienceV3Content = getStorePageContent('experienceV3')
@@ -18,15 +35,6 @@ const bundleToggleButtonSelectedClass =
 const bundleToggleButtonUnselectedClass =
   'font-medium text-muted-foreground hover:text-foreground/80'
 
-/** Compact reserved-edition label for narrow product rows (e.g. "#12/100"). */
-function compactReservedEditionLabel(label: string): string {
-  const editionMatch = label.match(/^Edition\s+(#\d+(?:\/\d+)?)$/i)
-  if (editionMatch) return editionMatch[1]
-  const reservingMatch = label.match(/^Reserving\s+(#\d+(?:\/\d+)?)$/i)
-  if (reservingMatch) return reservingMatch[1]
-  return label
-}
-
 export type ExperienceV3AddButtonEditionParts = {
   prefix: string
   editionBadge: string
@@ -39,6 +47,9 @@ export type ExperienceV3FloatingAddCardProps = {
   title: string | null
   artistName?: string | null
   reserveEditionLabel?: string | null
+  /** Active cart hold — desktop chip shows live expiry (e.g. "Edition #4 · 23h 42m reserved"). */
+  cartEditionHold?: CartEditionHold | null
+  cartEditionHoldFallbackNumber?: number | null
   addButtonLabel: string
   /** When set, renders prefix + edition badge + suffix inside the add CTA (edition reserve flow). */
   addButtonEditionParts?: ExperienceV3AddButtonEditionParts | null
@@ -60,8 +71,6 @@ export type ExperienceV3FloatingAddCardProps = {
     compareAt?: string | null
     nextStepChip?: string | null
   }
-  /** Context line under toggle or above product row — bundle vs collection messaging. */
-  offerHint?: string | null
 }
 
 /**
@@ -73,6 +82,8 @@ export function ExperienceV3FloatingAddCard({
   title,
   artistName,
   reserveEditionLabel,
+  cartEditionHold = null,
+  cartEditionHoldFallbackNumber = null,
   addButtonLabel,
   addButtonEditionParts = null,
   previewInCart,
@@ -82,9 +93,10 @@ export function ExperienceV3FloatingAddCard({
   className,
   bundleOffer,
   priceMeta,
-  offerHint = null,
 }: ExperienceV3FloatingAddCardProps) {
   const isBundleMode = bundleOffer?.mode === 'withLamp'
+  const bundleProductLabel =
+    isBundleMode && !previewInCart ? experienceV3Content.bundleCard.toggleAddLamp : null
   const bundleTotal = bundleOffer ? bundleOffer.artworkUnitUsd + bundleOffer.lampUnitUsd : 0
   const activePrice = bundleOffer
     ? isBundleMode
@@ -104,11 +116,9 @@ export function ExperienceV3FloatingAddCard({
   const showAddButton = !previewInCart
 
   const addButtonClassName = cn(
-    'flex items-center justify-center gap-1 font-semibold transition-colors sm:gap-1.5',
+    experienceV3AddCtaClass,
     addButtonEditionParts && 'flex-wrap',
-    isSoldOut
-      ? 'cursor-not-allowed bg-muted text-muted-foreground'
-      : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900'
+    isSoldOut && experienceV3AddCtaDisabledClass
   )
 
   const editionCtaBadgeClassName =
@@ -128,29 +138,61 @@ export function ExperienceV3FloatingAddCard({
     </>
   )
 
-  const showInlineEditionBadge = previewInCart && Boolean(reserveEditionLabel)
+  const holdRemaining = useCartEditionHoldRemainingLive(cartEditionHold?.expiresAt)
 
-  const inlineEditionBadge = showInlineEditionBadge ? (
+  const reservedEditionLineParts = useMemo(() => {
+    if (!previewInCart || !cartEditionHold) return null
+    return formatEditionHoldCompactLineParts(
+      resolveCartEditionHoldDisplayNumber(cartEditionHold, cartEditionHoldFallbackNumber),
+      holdRemaining
+    )
+  }, [previewInCart, cartEditionHold, cartEditionHoldFallbackNumber, holdRemaining])
+
+  const reservedEditionAriaLabel = reservedEditionLineParts
+    ? `${reservedEditionLineParts.editionLabel}${reservedEditionLineParts.timerSuffix}`
+    : reserveEditionLabel
+
+  const showInlineEditionBadge =
+    previewInCart && Boolean(reservedEditionLineParts || reserveEditionLabel)
+
+  const editionBadge = showInlineEditionBadge ? (
     <div
       className="shrink-0 text-right"
       role="status"
-      aria-label={reserveEditionLabel ?? undefined}
+      aria-label={reservedEditionAriaLabel ?? reserveEditionLabel ?? undefined}
     >
-      <div className="inline-flex items-center gap-1 rounded-full border border-experience-highlight/35 bg-experience-highlight/10 px-2.5 py-1 shadow-sm sm:gap-2 sm:px-3 sm:py-1.5">
+      <div className="inline-flex max-w-[min(100%,14rem)] items-center gap-1 rounded-full border border-experience-highlight/35 bg-experience-highlight/10 px-2.5 py-1 shadow-sm sm:max-w-none sm:gap-2 sm:px-3 sm:py-1.5">
         <Gem className="h-3.5 w-3.5 shrink-0 text-experience-highlight sm:h-4 sm:w-4" aria-hidden />
-        <span className="whitespace-nowrap text-sm font-bold tabular-nums leading-none text-foreground sm:text-base sm:leading-tight">
-          <span className="sm:hidden">{compactReservedEditionLabel(reserveEditionLabel!)}</span>
-          <span className="hidden sm:inline">{reserveEditionLabel}</span>
-        </span>
+        {reservedEditionLineParts ? (
+          <EditionHoldCompactLineText
+            parts={reservedEditionLineParts}
+            className="min-w-0 text-[11px] leading-tight sm:whitespace-nowrap sm:text-base sm:leading-tight"
+            timerClassName="font-normal text-muted-foreground"
+          />
+        ) : (
+          <span className="min-w-0 text-[11px] font-bold tabular-nums leading-tight text-experience-highlight sm:whitespace-nowrap sm:text-base sm:leading-tight">
+            {reserveEditionLabel}
+          </span>
+        )}
       </div>
     </div>
   ) : null
 
   const nextStepChip =
     !previewInCart && priceMeta?.nextStepChip ? (
-      <p className="max-w-[5.5rem] text-right text-[9px] font-semibold leading-tight tabular-nums text-experience-highlight md:max-w-[6rem] md:text-[10px]">
-        {priceMeta.nextStepChip}
-      </p>
+      <div className="flex max-w-[6.5rem] flex-col items-end gap-0.5 md:max-w-[8rem]">
+        <p
+          className="text-right text-[9px] font-semibold leading-tight tabular-nums text-experience-highlight md:text-[10px]"
+          title={EXPERIENCE_PURCHASE_HINTS.ladder}
+        >
+          {priceMeta.nextStepChip}
+        </p>
+        <ExperienceMeaningHint
+          explanation="Prices rise as editions sell."
+          alwaysVisible
+          className="text-right"
+        />
+      </div>
     ) : null
 
   const inlinePriceContent =
@@ -189,15 +231,60 @@ export function ExperienceV3FloatingAddCard({
     <div className="hidden shrink-0 text-right md:block">{inlinePriceContent}</div>
   ) : null
 
+  const artworkThumb = artImg ? (
+    <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-background shadow-sm sm:h-16 sm:w-12">
+      <Image
+        src={artImg}
+        alt={artAlt}
+        fill
+        className="object-cover"
+        sizes="48px"
+        unoptimized
+      />
+    </div>
+  ) : null
+
+  const productTitleBlock = (
+    <ExperienceV3StickyBarProductMeta
+      artistName={artistName}
+      title={title}
+      bundleLabel={bundleProductLabel}
+      align="left"
+      className="min-w-0 flex-1"
+    />
+  )
+
+  const desktopAddButton = showAddButton ? (
+    <button
+      type="button"
+      disabled={isSoldOut}
+      onClick={onPrimaryAction}
+      className={cn(addButtonClassName, 'hidden shrink-0 md:flex')}
+    >
+      {addButtonContent}
+    </button>
+  ) : null
+
+  const mobileAddButton = showAddButton ? (
+    <button
+      type="button"
+      disabled={isSoldOut}
+      onClick={onPrimaryAction}
+      className={cn(addButtonClassName, 'w-full md:hidden')}
+    >
+      {addButtonContent}
+    </button>
+  ) : null
+
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       {showTrustStrip ? (
-        <ExperienceTrustStrip className="rounded-xl border border-border/50 border-b-border/60 shadow-sm" />
+        <ExperienceTrustStrip className="rounded-xl shadow-sm md:hidden" />
       ) : null}
       <div
         className={cn(
           'flex flex-col gap-2.5 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-md',
-          'sm:gap-3 sm:p-3'
+          'sm:gap-3 sm:p-3 md:gap-3 md:p-4'
         )}
       >
         {bundleOffer && !previewInCart ? (
@@ -238,68 +325,31 @@ export function ExperienceV3FloatingAddCard({
                 </span>
               </button>
             </div>
-            {offerHint ? (
-              <p className="hidden text-[10px] leading-snug text-muted-foreground md:block md:text-[11px]">{offerHint}</p>
-            ) : null}
           </div>
-        ) : offerHint && !previewInCart ? (
-          <p className="hidden text-[10px] leading-snug text-muted-foreground md:block md:text-[11px]">{offerHint}</p>
         ) : null}
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
-          {artImg ? (
-            <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-background shadow-sm sm:h-16 sm:w-12">
-              <Image
-                src={artImg}
-                alt={artAlt}
-                fill
-                className="object-cover"
-                sizes="48px"
-                unoptimized
-              />
-            </div>
-          ) : null}
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="space-y-0.5">
-              {artistName ? (
-                <p className="truncate text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                  {artistName}
-                </p>
-              ) : null}
-              {title ? (
-                <p className="truncate text-sm font-semibold leading-snug text-foreground">{title}</p>
-              ) : null}
-            </div>
-          </div>
-          {inlineEditionBadge}
+
+        {/* Mobile: stacked row + full-width CTA — unchanged */}
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3.5 md:hidden">
+          {artworkThumb}
+          {productTitleBlock}
+          {editionBadge}
           {mobileInlinePrice}
-          {desktopInlinePrice}
-          {showAddButton ? (
-            <button
-              type="button"
-              disabled={isSoldOut}
-              onClick={onPrimaryAction}
-              className={cn(
-                addButtonClassName,
-                'hidden shrink-0 rounded-full px-3.5 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm md:flex'
-              )}
-            >
-              {addButtonContent}
-            </button>
-          ) : null}
         </div>
-        {showAddButton ? (
-          <button
-            type="button"
-            disabled={isSoldOut}
-            onClick={onPrimaryAction}
-            className={cn(
-              addButtonClassName,
-              'w-full rounded-full px-4 py-2.5 text-sm md:hidden'
-            )}
-          >
-            {addButtonContent}
-          </button>
-        ) : null}
+        {mobileAddButton}
+
+        {/* Desktop: thumb, meta, price, CTA — trust block is a sibling outside this card */}
+        <div className="hidden min-w-0 items-center gap-4 md:flex">
+          {artworkThumb}
+          <ExperienceV3StickyBarProductMeta
+            artistName={artistName}
+            title={title}
+            bundleLabel={bundleProductLabel}
+            align="left"
+            className="min-w-0 flex-1"
+          />
+          {desktopInlinePrice}
+          {previewInCart ? editionBadge : desktopAddButton}
+        </div>
       </div>
     </div>
   )

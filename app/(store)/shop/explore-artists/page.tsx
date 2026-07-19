@@ -7,6 +7,7 @@ import { landingFontVariables } from '../home-v2/landing-fonts'
 import landingStyles from '../home-v2/landing.module.css'
 import { ExploreArtistsClient } from './components/ExploreArtistsClient'
 import { ExploreArtistsJsonLd } from '@/components/seo/ExploreArtistsJsonLd'
+import { getYotpoStoreReviewSummary } from '@/lib/shop/yotpo-store-reviews'
 
 const TITLE = 'Artist directory — street art & limited edition prints | Street Collector'
 const DESCRIPTION =
@@ -49,7 +50,10 @@ type ExploreArtistsPageProps = {
 
 export default async function ExploreArtistsPage({ searchParams }: ExploreArtistsPageProps) {
   const resolvedSearchParams = await searchParams
-  const raw = await getShopArtistsList()
+  const [raw, reviewSummary] = await Promise.all([
+    getShopArtistsList(),
+    getYotpoStoreReviewSummary().catch(() => null),
+  ])
   const artists = orderArtistsForExplore(raw)
   const requestedArtistSlug = resolvedSearchParams.artist?.trim().toLowerCase() || ''
 
@@ -67,6 +71,7 @@ export default async function ExploreArtistsPage({ searchParams }: ExploreArtist
         artists={artists}
         experienceUrl={homeV2LandingContent.urls.experience}
         requestedArtistSlug={requestedArtistSlug}
+        reviewSummary={reviewSummary}
       />
     </div>
   )

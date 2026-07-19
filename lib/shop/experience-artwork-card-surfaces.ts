@@ -22,10 +22,20 @@ export type PickerArtworkCardSurfaces = {
   meta: string
 }
 
+const pickerSelectedPressedClass =
+  'shadow-inner ring-1 ring-inset ring-black/[0.06] dark:ring-white/10'
+
 /** Picker sheet card: one source for shell / image well / footer meta backgrounds. */
-export function getPickerArtworkCardSurfaces(_isSelected: boolean): PickerArtworkCardSurfaces {
-  const t = `transition-[background-color] ${BG_EASE}`
-  const tm = `transition-[background-color,color] ${BG_EASE}`
+export function getPickerArtworkCardSurfaces(isSelected: boolean): PickerArtworkCardSurfaces {
+  const t = `transition-[background-color,box-shadow] ${BG_EASE}`
+  const tm = `transition-[background-color,color,box-shadow] ${BG_EASE}`
+  if (isSelected) {
+    return {
+      shell: cn(t, pickerSelectedPressedClass, 'bg-card dark:bg-background'),
+      imageWell: cn(t, 'bg-muted/40 dark:bg-experience-surface-2/90'),
+      meta: cn(tm, 'bg-card dark:bg-background'),
+    }
+  }
   return {
     shell: t,
     imageWell: cn(t, 'bg-background'),
@@ -50,20 +60,37 @@ export function getPickerCardSelectionChrome(_isSelected: boolean, _suppressIndi
   return ''
 }
 
-/** 28px touch target — compact quick-add FAB on picker / artist-works cards. */
-export const experienceQuickAddFabSizeClass = 'h-7 w-7'
+/** 20px touch target — compact, low-profile quick-add FAB on picker / artist-works cards. */
+export const experienceQuickAddFabSizeClass = 'h-5 w-5'
 
-/** Icon size paired with `experienceQuickAddFabSizeClass`. */
-export const experienceQuickAddFabIconClass = 'h-3 w-3'
+/** Icon size paired with `experienceQuickAddFabSizeClass` — inherits FAB text color (CTA red by default). */
+export const experienceQuickAddFabIconClass = 'h-[9px] w-[9px] shrink-0 text-current'
 
-/** Quick-add FAB — matches primary experience CTAs via `--experience-cta` (maroon light, peach dark). */
+/** Quick-add FAB — semi-solid surface, CTA icon; in-cart uses accent ring + check without loud fill. */
 export function getExperienceQuickAddFabClass(isInCart: boolean): string {
-  return cn(
-    'flex items-center justify-center rounded-full shadow-md transition-colors',
+  const base = cn(
+    'flex items-center justify-center rounded-full border transition-[background-color,box-shadow,border-color,color] duration-150',
     experienceQuickAddFabSizeClass,
-    'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-cta/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
-    isInCart ? 'cursor-default shadow-black/25' : 'shadow-black/25'
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-cta/30 focus-visible:ring-offset-1 focus-visible:ring-offset-background'
+  )
+
+  if (isInCart) {
+    return cn(
+      base,
+      'cursor-pointer',
+      'bg-white text-experience-cta border-experience-cta/30 shadow-sm ring-1 ring-experience-cta/25',
+      'hover:bg-experience-cta/5 hover:border-experience-cta/40 hover:ring-experience-cta/35',
+      'dark:bg-card dark:text-experience-cta dark:border-experience-cta/35 dark:shadow-sm dark:ring-experience-cta/30',
+      'dark:hover:bg-experience-cta/10 dark:hover:border-experience-cta/45'
+    )
+  }
+
+  return cn(
+    base,
+    'bg-white text-experience-cta border-border/55 shadow-sm',
+    'hover:border-border/75 hover:shadow',
+    'dark:bg-card dark:text-experience-cta dark:border-border/45 dark:shadow-sm',
+    'dark:hover:bg-muted/50 dark:hover:border-border/60'
   )
 }
 

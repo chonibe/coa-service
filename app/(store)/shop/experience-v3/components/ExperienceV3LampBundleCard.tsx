@@ -1,8 +1,12 @@
 'use client'
 
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { capitalizeFirstLetter, cn, formatPriceCompact } from '@/lib/utils'
+import {
+  experienceV3AddCtaClass,
+  experienceV3AddCtaDisabledClass,
+} from '@/lib/shop/street-collector-cta'
+import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { getStorePageContent } from '@/lib/content/site-content'
 
 const experienceV3Content = getStorePageContent('experienceV3')
@@ -21,9 +25,6 @@ export type ExperienceV3BundleMode = 'withLamp' | 'artworkOnly'
 export type ExperienceV3LampBundleCardProps = {
   lamp: ShopifyProduct
   artwork: ShopifyProduct
-  artworkUnitUsd: number
-  lampUnitUsd: number
-  listPriceCompareAt?: string | null
   disabled?: boolean
   onAddWithLamp: () => void
   onArtworkOnly: () => void
@@ -35,21 +36,16 @@ export type ExperienceV3LampBundleCardProps = {
    */
   mode: ExperienceV3BundleMode
   onModeChange: (mode: ExperienceV3BundleMode) => void
-  /** Edition ladder chip, e.g. "2 more · then $42" — shown under price (desktop bundle). */
-  nextStepChip?: string | null
   /**
-   * `responsive` — hero meta lives in the mobile shell header; on small screens only toggle,
-   * price, and CTA show. `default` — full panel with tag, bundle name, and description.
+   * `responsive` — hero meta lives in the mobile shell header; on small screens only toggle
+   * and CTA show. `default` — full panel with tag, bundle name, and description.
    */
   layout?: 'default' | 'responsive'
 }
 
 /**
  * Bundle offer copy panel — tag/heading/description, the "Artwork only" / "Add Street Lamp"
- * toggle, price, and CTA. Rendered as the `sideContent` of `ExperienceV3SplineLampSection`, next
- * to the live 3D lamp preview (no static product imagery of its own). Intentionally flat/plain —
- * no card border, gradients, or motion — to sit naturally inside that section alongside the
- * "Your Collection" heading style.
+ * toggle, and CTA. Pricing lives in the bottom sticky bar only.
  *
  * The artwork is the default/base state when a lamp is already in the cart; otherwise bundle
  * (lamp + artwork) is the default. The lamp is framed as the opt-in add-on when switching to
@@ -58,16 +54,12 @@ export type ExperienceV3LampBundleCardProps = {
 export function ExperienceV3LampBundleCard({
   lamp,
   artwork,
-  artworkUnitUsd,
-  lampUnitUsd,
-  listPriceCompareAt = null,
   disabled = false,
   onAddWithLamp,
   onArtworkOnly,
   artistName,
   mode,
   onModeChange,
-  nextStepChip = null,
   layout = 'default',
 }: ExperienceV3LampBundleCardProps) {
   const isBundleMode = mode === 'withLamp'
@@ -77,10 +69,6 @@ export function ExperienceV3LampBundleCard({
   const lampTitle = capitalizeFirstLetter(lamp.title.trim())
   const artworkTitle = capitalizeFirstLetter(artwork.title.trim())
 
-  const bundleTotal = artworkUnitUsd + lampUnitUsd
-  const activePrice = isBundleMode ? bundleTotal : artworkUnitUsd
-  const activeCompareAt = isBundleMode ? listPriceCompareAt : null
-
   const primaryLabel = isBundleMode
     ? experienceV3Content.bundleCard.addBundle
     : experienceV3Content.bundleCard.addArtwork
@@ -89,12 +77,6 @@ export function ExperienceV3LampBundleCard({
   const modeDescription = isBundleMode
     ? experienceV3Content.bundleCard.descriptionWithLamp(artistName)
     : experienceV3Content.bundleCard.descriptionArtworkOnly
-  const modeHint = isBundleMode
-    ? experienceV3Content.bundleCard.hintWithLamp
-    : experienceV3Content.bundleCard.hintArtworkOnly
-  const priceSuffix = isBundleMode
-    ? experienceV3Content.bundleCard.priceSuffixBundle
-    : experienceV3Content.bundleCard.priceSuffixArtwork
 
   return (
     <div
@@ -156,41 +138,20 @@ export function ExperienceV3LampBundleCard({
             {experienceV3Content.bundleCard.artworkOnly}
           </button>
         </div>
-        {modeHint ? (
-          <p className="hidden text-[11px] leading-snug text-muted-foreground md:block">{modeHint}</p>
-        ) : null}
       </div>
 
       <div className={cn('space-y-1.5', isResponsive ? 'md:space-y-2.5' : 'md:space-y-2.5')}>
-        {activePrice > 0 ? (
-          <p className="text-[12px] tabular-nums text-muted-foreground">
-            {activeCompareAt ? (
-              <>
-                <span className="line-through">{activeCompareAt}</span>
-                <span className="mx-1.5 font-semibold text-foreground">${formatPriceCompact(activePrice)}</span>
-              </>
-            ) : (
-              <span className="font-semibold text-foreground">${formatPriceCompact(activePrice)}</span>
-            )}
-            <span className="text-muted-foreground">{priceSuffix}</span>
-          </p>
-        ) : null}
-        {nextStepChip ? (
-          <p className="text-[10px] font-medium tabular-nums text-muted-foreground">{nextStepChip}</p>
-        ) : null}
         <button
           type="button"
           disabled={disabled}
           onClick={handlePrimaryAction}
           className={cn(
-            'flex w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors active:scale-[0.98] md:w-auto',
-            disabled
-              ? 'cursor-not-allowed bg-muted text-muted-foreground'
-              : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900'
+            experienceV3AddCtaClass,
+            'w-full md:w-auto',
+            disabled && experienceV3AddCtaDisabledClass
           )}
         >
-          <span>{primaryLabel}</span>
-          <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+          <span className="truncate">{primaryLabel}</span>
         </button>
       </div>
     </div>

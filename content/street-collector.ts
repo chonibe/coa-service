@@ -95,7 +95,7 @@ export const streetCollectorContent = {
     cue: '',
     primaryCta: { label: 'Browse collection', href: EXPERIENCE_URL },
     trustMicroItems: [
-      'Free worldwide shipping',
+      'Free worldwide shipping · 9–15 business days',
       '12-month guarantee',
       '30-day returns',
     ] as const,
@@ -276,7 +276,7 @@ export const streetCollectorContent = {
   /** Displayed above the shipping / guarantee / returns row */
   trustBarTitle: "We've got you covered",
   trustBar: [
-    { label: 'Free worldwide shipping', description: 'Delivery is on us.', icon: 'shipping' },
+    { label: 'Free worldwide shipping · 9–15 business days', description: 'Delivery is on us.', icon: 'shipping' },
     { label: '12 month guarantee', description: 'Your lamp is covered for the first year.', icon: 'guarantee' },
     { label: 'Easy 30-day returns', description: 'Send it back within 30 days if it is not right.', icon: 'returns' },
   ],
@@ -378,7 +378,7 @@ export const streetCollectorContent = {
           {
             question: 'How big are the Street Lamps?',
             answer:
-              'Each Street Lamp measures about 21 × 14 × 7 cm (8.1 × 5.7 × 2.7 in) and weighs roughly 1.1 kg (2.4 lb). Compact enough for a desk or shelf, substantial enough to feel like a real design piece.',
+              'Each Street Lamp measures 21.5×14.5×7 cm (about 8.5×5.7×2.8 in) and weighs roughly 1.1 kg (2.4 lb). Compact enough for a desk or shelf, substantial enough to feel like a real design piece.',
           },
           {
             question: 'How long does shipping take?',

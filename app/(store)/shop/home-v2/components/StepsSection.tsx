@@ -81,7 +81,21 @@ export function StepsSection() {
           role="tabpanel"
           aria-labelledby={`home-v2-step-tab-${activeIndex}`}
         >
-          <video ref={videoRef} autoPlay muted playsInline preload="auto" onEnded={onVideoEnded}>
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            defaultMuted
+            playsInline
+            preload="auto"
+            onEnded={onVideoEnded}
+            onLoadedMetadata={(e) => {
+              const el = e.currentTarget
+              el.muted = true
+              el.defaultMuted = true
+              el.volume = 0
+            }}
+          >
             <source src={active.videoUrl} type="video/mp4" />
           </video>
           <div className={styles.vidProgressWrap} aria-hidden>

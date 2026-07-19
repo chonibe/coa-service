@@ -8,7 +8,7 @@ import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 
-/** Static facade as LCP candidate; Spline scene mounts via requestIdleCallback (same as V2). */
+/** Static facade as LCP candidate; Spline scene mounts after user tap. */
 const SPLINE_FACADE_SRC = '/internal.webp'
 
 const CHUNK_RELOAD_KEY = 'spline_chunk_reload'
@@ -120,7 +120,6 @@ export function ExperienceV3SplineLampSection({
   const sectionRef = useRef<HTMLElement>(null)
   const [inView, setInView] = useState(false)
   const [splineReady, setSplineReady] = useState(false)
-  const splineIdleScheduledRef = useRef(false)
   const { theme } = useExperienceTheme()
   const unifiedSplineBg = SPLINE_BG_HEX[theme === 'light' ? 'light' : 'dark']
 
@@ -141,21 +140,6 @@ export function ExperienceV3SplineLampSection({
     observer.observe(el)
     return () => observer.disconnect()
   }, [onInViewChange, reelScrollContainerRef])
-
-  // Defer Spline mount until idle (3s max) when section is near viewport — same as V2 SplineFullScreen.
-  // Never reset on artwork/image change; texture updates flow through image1/image2 props in-place.
-  useEffect(() => {
-    if (!inView || splineIdleScheduledRef.current) return
-    splineIdleScheduledRef.current = true
-    const schedule = (cb: () => void) =>
-      typeof requestIdleCallback !== 'undefined'
-        ? requestIdleCallback(cb, { timeout: 3000 })
-        : (setTimeout(cb, 3000) as unknown as number)
-    const cancel = (id: number) =>
-      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
-    const id = schedule(() => setSplineReady(true))
-    return () => cancel(id)
-  }, [inView])
 
   const facadeSrc = image1 ?? image2 ?? SPLINE_FACADE_SRC
   const splineImage1 = image1 ?? null
@@ -264,17 +248,16 @@ export function ExperienceV3SplineLampSection({
       id="experience-v3-lamp-preview"
       aria-labelledby="experience-v3-lamp-heading"
       className={cn(
-        'relative z-0 w-full max-w-full shrink-0 border-t border-border',
+        'relative z-0 w-full max-w-full shrink-0',
         'scroll-mt-[max(4.5rem,env(safe-area-inset-top))]'
       )}
       style={{ backgroundColor: unifiedSplineBg }}
     >
       <div
         className={cn(
-          'mx-auto w-full max-w-[min(100%,1200px)] px-3 md:px-6 md:pb-10 md:pt-10',
-          // Compact (bundle) mode gets a tighter mobile top/bottom pad than the standalone
-          // "Your Collection" heading layout — desktop (`md:`) padding is identical either way.
-          compact ? 'pb-4 pt-4' : 'pb-6 pt-8'
+          'mx-auto w-full max-w-[min(100%,1200px)] px-3 md:px-6 md:pb-10',
+          // Compact (bundle) mode gets tighter bottom pad than the standalone heading layout.
+          compact ? 'pb-4' : 'pb-6'
         )}
       >
         {sideContent ? (
@@ -289,7 +272,7 @@ export function ExperienceV3SplineLampSection({
           <>
             <h2
               id="experience-v3-lamp-heading"
-              className="mb-4 text-center font-serif text-xl font-semibold tracking-tight text-experience-title md:mb-6 md:text-2xl"
+              className="mb-4 pt-6 text-center font-serif text-xl font-semibold tracking-tight text-experience-title md:mb-6 md:pt-8 md:text-2xl"
             >
               {heading}
             </h2>

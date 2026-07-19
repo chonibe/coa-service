@@ -33,6 +33,7 @@ export function BestSellersScrollGallery({ items }: BestSellersScrollGalleryProp
   const scrollRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef(false)
   const didDragRef = useRef(false)
+  const pointerIdRef = useRef<number | null>(null)
   const startXRef = useRef(0)
   const scrollLeftRef = useRef(0)
 
@@ -43,26 +44,41 @@ export function BestSellersScrollGallery({ items }: BestSellersScrollGalleryProp
   }, [])
 
   useEffect(() => {
-    const onMouseUp = () => {
+    const clearDrag = () => {
       if (isDraggingRef.current) {
-        setTimeout(() => {
+        window.setTimeout(() => {
           didDragRef.current = false
         }, 0)
       }
       isDraggingRef.current = false
+      pointerIdRef.current = null
     }
-    const onMouseMove = (e: MouseEvent) => {
+
+    const onPointerUp = () => {
+      clearDrag()
+    }
+
+    const onPointerCancel = () => {
+      clearDrag()
+    }
+
+    const onPointerMove = (e: PointerEvent) => {
       if (!isDraggingRef.current || !scrollRef.current) return
-      if (Math.abs(e.pageX - startXRef.current) > 5) didDragRef.current = true
+      if (pointerIdRef.current !== e.pointerId) return
+      if (Math.abs(e.clientX - startXRef.current) > 5) didDragRef.current = true
       e.preventDefault()
-      const walk = (e.pageX - startXRef.current) * 1.2
+      const walk = (e.clientX - startXRef.current) * 1.2
       scrollRef.current.scrollLeft = scrollLeftRef.current - walk
     }
-    document.addEventListener('mouseup', onMouseUp)
-    document.addEventListener('mousemove', onMouseMove, { passive: false })
+
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerCancel)
+    window.addEventListener('pointermove', onPointerMove, { passive: false })
+
     return () => {
-      document.removeEventListener('mouseup', onMouseUp)
-      document.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerCancel)
+      window.removeEventListener('pointermove', onPointerMove)
     }
   }, [])
 
@@ -113,12 +129,23 @@ export function BestSellersScrollGallery({ items }: BestSellersScrollGalleryProp
         className={styles.bestSellersScroll}
         role="list"
         aria-label="Best selling artworks"
-        onMouseDown={(e) => {
+        onPointerDown={(e) => {
           if (!scrollRef.current) return
+          if (e.pointerType === 'touch') return
           isDraggingRef.current = true
           didDragRef.current = false
-          startXRef.current = e.pageX
+          pointerIdRef.current = e.pointerId
+          startXRef.current = e.clientX
           scrollLeftRef.current = scrollRef.current.scrollLeft
+          scrollRef.current.setPointerCapture?.(e.pointerId)
+        }}
+        onPointerUp={(e) => {
+          if (pointerIdRef.current !== e.pointerId) return
+          scrollRef.current?.releasePointerCapture?.(e.pointerId)
+        }}
+        onPointerCancel={(e) => {
+          if (pointerIdRef.current !== e.pointerId) return
+          scrollRef.current?.releasePointerCapture?.(e.pointerId)
         }}
         onClickCapture={(e) => {
           if (didDragRef.current) {
@@ -133,9 +160,17 @@ export function BestSellersScrollGallery({ items }: BestSellersScrollGalleryProp
             artistSlug: item.artistSlug,
             artworkHandle: product.handle,
           })
-          const imageUrl =
-            product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
-          const img = getShopifyImageUrl(imageUrl ?? undefined, 500) ?? imageUrl
+          const imageEdges = product.images?.edges?.map((e) => e.node) ?? []
+          const primaryUrl =
+            product.featuredImage?.url ?? imageEdges[0]?.url ?? null
+          const secondUrl =
+            imageEdges.find((n) => n.url && n.url !== primaryUrl)?.url ??
+            imageEdges[1]?.url ??
+            null
+          const img = getShopifyImageUrl(primaryUrl ?? undefined, 500) ?? primaryUrl
+          const secondImg = secondUrl
+            ? getShopifyImageUrl(secondUrl, 500) ?? secondUrl
+            : null
           const vendor = product.vendor?.trim() || null
 
           return (
@@ -148,14 +183,30 @@ export function BestSellersScrollGallery({ items }: BestSellersScrollGalleryProp
             >
               <div className={styles.bestSellersCardImage}>
                 {img ? (
-                  <Image
-                    src={img}
-                    alt={product.title}
-                    fill
-                    className={styles.bestSellersCardImg}
-                    sizes="(max-width: 480px) 42vw, 200px"
-                    unoptimized
-                  />
+                  <>
+                    <Image
+                      src={img}
+                      alt={product.title}
+                      fill
+                      className={cn(
+                        styles.bestSellersCardImg,
+                        secondImg && styles.bestSellersCardImgPrimary
+                      )}
+                      sizes="(max-width: 480px) 42vw, 200px"
+                      unoptimized
+                    />
+                    {secondImg ? (
+                      <Image
+                        src={secondImg}
+                        alt=""
+                        fill
+                        aria-hidden
+                        className={styles.bestSellersCardImgHover}
+                        sizes="(max-width: 480px) 42vw, 200px"
+                        unoptimized
+                      />
+                    ) : null}
+                  </>
                 ) : (
                   <div className={styles.bestSellersCardPlaceholder}>No image</div>
                 )}

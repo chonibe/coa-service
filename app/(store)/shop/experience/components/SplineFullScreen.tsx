@@ -548,7 +548,7 @@ export function SplineFullScreen({
         ref={setScrollContainerRef}
         onScroll={handleScroll}
         className={cn(
-          'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-[20vh] touch-pan-y overscroll-contain'
+          'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-clip scrollbar-hide pb-[20vh] touch-pan-y overscroll-contain [-webkit-overflow-scrolling:touch]'
         )}
         style={{
           scrollbarWidth: 'none',

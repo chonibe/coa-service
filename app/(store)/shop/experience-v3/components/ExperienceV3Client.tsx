@@ -39,6 +39,11 @@ import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
+import {
+  findProductByLastViewed,
+  loadLastViewedArtwork,
+  saveLastViewedArtwork,
+} from '@/lib/shop/experience-last-viewed-artwork'
 import { useExperienceArtistCatalog } from '@/lib/shop/use-experience-artist-catalog'
 import { computeExperienceFeaturedBundlePricing } from '@/lib/shop/experience-bundle-order-pricing'
 import {
@@ -67,7 +72,7 @@ import {
   DEFAULT_SIDE_POSITION,
   DEFAULT_SIDE_B_POSITION,
 } from '@/lib/experience-image-position'
-import { LayoutGrid, ZoomIn, X } from 'lucide-react'
+import { LayoutGrid, PanelRight, X, ZoomIn } from 'lucide-react'
 import { getVendorCollectionHandle } from '@/lib/shopify/vendor-collection-handle'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import type { ExperienceV3ArtistProfileTarget } from './ExperienceV3ArtistProfileSection'
@@ -78,12 +83,17 @@ import { ExperienceV3StickyBarProductMeta } from './ExperienceV3StickyBarProduct
 import { ExperienceV3ProductInfoTabs } from './ExperienceV3ProductInfoTabs'
 import { ExperienceV3SplineLampSection } from './ExperienceV3SplineLampSection'
 import { useCartEditionHolds } from '@/lib/shop/use-cart-edition-holds'
+import type { CartEditionHold } from '@/lib/shop/cart-edition-hold-types'
 import {
+  cartEditionHoldExpiresAt,
   computeReservedEditionNumber,
   formatCartEditionHoldEditionLabel,
+  isCartEditionHoldActive,
   resolveCartEditionHoldDisplayNumber,
 } from '@/lib/shop/compute-cart-edition-reserve'
 import { EditionHoldIndicator } from '../../experience-v2/components/EditionHoldIndicator'
+import { ExperienceV3FomoPill } from './ExperienceV3FomoPill'
+import { shopUnifiedTopBarTopInsetClass } from '@/lib/shop/shop-unified-top-bar-layout'
 
 const OrderBar = dynamic(() => import('../../experience-v2/components/OrderBar').then((m) => m.OrderBar), {
   ssr: false,
@@ -141,7 +151,14 @@ const ExperienceV3ArtistProfileSection = dynamic(
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
 const LOAD_MORE_PAGE_SIZE = 36
+/** Persists dismissal of the mobile top-bar Collection attention nudge. */
+const COLLECTION_BUTTON_CLICKED_KEY = 'experience-v3-collection-button-clicked'
 const experienceV3Content = getStorePageContent('experienceV3')
+
+function cartIncludesProductId(cartOrder: string[], productId: string): boolean {
+  const productKey = normalizeShopifyProductId(productId) ?? productId
+  return cartOrder.some((id) => (normalizeShopifyProductId(id) ?? id) === productKey)
+}
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -208,14 +225,19 @@ export function ExperienceV3Client({
   // Default is "withLamp" when no lamp is in the cart — bundle-first; visitor can switch to artwork only.
   const [bundleOfferMode, setBundleOfferMode] = useState<ExperienceV3BundleMode>('withLamp')
 
+  // Prefer deep link (`?artwork=` → initialSelectedArtwork). Random / server pick applies only
+  // when there is no deep link and no saved last-viewed (restored in an effect below).
   const [previewProduct, setPreviewProduct] = useState<ShopifyProduct | null>(() =>
-    pickInitialPreviewProduct(initialSeason1, initialSeason2)
+    initialSelectedArtwork ??
+      initialGalleryProduct ??
+      pickInitialPreviewProduct(initialSeason1, initialSeason2)
   )
   const galleryProduct = useGalleryProductHydration(previewProduct, {
     initialFullProduct: initialGalleryProduct,
   })
   const [galleryIndex, setGalleryIndex] = useState(() => {
     const initial =
+      initialSelectedArtwork ??
       initialGalleryProduct ??
       pickInitialPreviewProduct(initialSeason1, initialSeason2)
     return getDefaultGalleryIndex(collectProductImages(initial).length)
@@ -244,7 +266,19 @@ export function ExperienceV3Client({
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [pickerHasBeenOpened, setPickerHasBeenOpened] = useState(false)
   const [pickerLayoutDesktop, setPickerLayoutDesktop] = useState(false)
+  const [collectionPanelExpanded, setCollectionPanelExpanded] = useState(true)
+  /** Soft pulse/wiggle on mobile Collection pill until first tap (persisted). */
+  const [showCollectionNudge, setShowCollectionNudge] = useState(false)
   const cartCountWhenPickerOpenedRef = useRef(0)
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(COLLECTION_BUTTON_CLICKED_KEY) === '1') return
+      setShowCollectionNudge(true)
+    } catch {
+      setShowCollectionNudge(true)
+    }
+  }, [])
 
   useEffect(() => {
     const saved = loadImagePosition()
@@ -264,21 +298,71 @@ export function ExperienceV3Client({
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     const q = window.matchMedia('(min-width: 1024px)')
-    const sync = () => setPickerLayoutDesktop(q.matches)
+    const sync = () => {
+      const isDesktop = q.matches
+      setPickerLayoutDesktop(isDesktop)
+      if (isDesktop) {
+        setPickerHasBeenOpened(true)
+        setCollectionPanelExpanded(true)
+      }
+    }
     sync()
     q.addEventListener('change', sync)
     return () => q.removeEventListener('change', sync)
   }, [])
 
   useEffect(() => {
-    if (!pickerLayoutDesktop) return
-    setPickerHasBeenOpened(true)
-    setIsPickerOpen(true)
-  }, [pickerLayoutDesktop])
-
-  useEffect(() => {
     saveExperienceCart(cartOrder, lampQuantity, lampPreviewOrder)
   }, [cartOrder, lampQuantity, lampPreviewOrder])
+
+  const lastViewedRestoredRef = useRef(Boolean(initialSelectedArtwork))
+
+  /** Restore last-viewed artwork when there is no `?artwork=` deep link. */
+  useEffect(() => {
+    if (initialSelectedArtwork) {
+      lastViewedRestoredRef.current = true
+      return
+    }
+    if (lastViewedRestoredRef.current) return
+
+    const saved = loadLastViewedArtwork()
+    if (!saved) {
+      lastViewedRestoredRef.current = true
+      return
+    }
+
+    const found = findProductByLastViewed(saved, [
+      productsSeason1,
+      productsSeason2,
+      spotlightProductsFromApi,
+    ])
+    if (!found || found.id === lamp.id) {
+      if (productsSeason1.length + productsSeason2.length > 0) {
+        lastViewedRestoredRef.current = true
+      }
+      return
+    }
+
+    lastViewedRestoredRef.current = true
+    setPreviewProduct(found)
+    setGalleryIndex(getDefaultGalleryIndex(collectProductImages(found).length))
+    if (found.availableForSale !== false) {
+      setLampSplineFocusProductId(found.id)
+    }
+  }, [
+    initialSelectedArtwork,
+    productsSeason1,
+    productsSeason2,
+    spotlightProductsFromApi,
+    lamp.id,
+  ])
+
+  /** Persist preview selection for the next Experience visit. */
+  useEffect(() => {
+    if (!lastViewedRestoredRef.current && !initialSelectedArtwork) return
+    if (!previewProduct || previewProduct.id === lamp.id) return
+    saveLastViewedArtwork(previewProduct)
+  }, [previewProduct, lamp.id, initialSelectedArtwork])
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
@@ -695,17 +779,14 @@ export function ExperienceV3Client({
 
   const {
     cartHoldsByProductId: cartEditionHolds,
+    holdsByProductId: sessionEditionHolds,
     soonestExpiry: cartEditionHoldSoonestExpiry,
   } = useCartEditionHolds({
     cartProductGids: cartOrder,
     streetEditionByProductId,
   })
 
-  const previewCartEditionHold = useMemo(() => {
-    if (!previewProduct) return null
-    const key = normalizeShopifyProductId(previewProduct.id)
-    return key ? cartEditionHolds[key] ?? null : null
-  }, [previewProduct, cartEditionHolds])
+  const optimisticEditionHoldsRef = useRef<Record<string, CartEditionHold>>({})
 
   const artworkPriceMaps = useMemo(
     () => ({
@@ -970,10 +1051,13 @@ export function ExperienceV3Client({
 
   const handleToggleSelect = useCallback(
     (product: ShopifyProduct) => {
+      const productKey = normalizeShopifyProductId(product.id) ?? product.id
       setCartOrder((prev) => {
-        const exists = prev.includes(product.id)
+        const exists = cartIncludesProductId(prev, product.id)
         if (exists) {
-          const filtered = prev.filter((id) => id !== product.id)
+          const filtered = prev.filter(
+            (id) => (normalizeShopifyProductId(id) ?? id) !== productKey
+          )
           if (filtered.length === 0) {
             setResetTrigger((t) => t + 1)
             setRotateToSide(null)
@@ -995,17 +1079,24 @@ export function ExperienceV3Client({
     [assignProductToLampPreview, removeProductFromLampPreview]
   )
 
-  const handleQuickAddFromPicker = useCallback((product: ShopifyProduct) => {
-    if (product.availableForSale === false) return
-    setCartOrder((prev) => {
-      if (prev.includes(product.id)) return prev
-      assignProductToLampPreview(product.id)
-      return [...prev, product.id]
-    })
-    setLastAddedProductId(product.id)
-    const variant = product.variants?.edges?.[0]?.node
-    trackQuickAddToCart(product, variant, 'experience-v3-quick')
-  }, [assignProductToLampPreview])
+  const handleQuickAddFromPicker = useCallback(
+    (product: ShopifyProduct) => {
+      if (cartIncludesProductId(cartOrder, product.id)) {
+        handleToggleSelect(product)
+        return
+      }
+      if (product.availableForSale === false) return
+      setCartOrder((prev) => {
+        if (cartIncludesProductId(prev, product.id)) return prev
+        assignProductToLampPreview(product.id)
+        return [...prev, product.id]
+      })
+      setLastAddedProductId(product.id)
+      const variant = product.variants?.edges?.[0]?.node
+      trackQuickAddToCart(product, variant, 'experience-v3-quick')
+    },
+    [cartOrder, handleToggleSelect, assignProductToLampPreview]
+  )
 
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
@@ -1060,18 +1151,53 @@ export function ExperienceV3Client({
       }))
     }
     setIsPickerOpen(true)
-  }, [cartOrder.length, setPickerEngaged, spotlightData?.vendorName, spotlightArtistVendorForFilter])
+    if (pickerLayoutDesktop) {
+      setCollectionPanelExpanded(true)
+    }
+  }, [cartOrder.length, setPickerEngaged, spotlightData?.vendorName, spotlightArtistVendorForFilter, pickerLayoutDesktop])
 
   useExperienceOpenArtPicker(handleOpenPicker)
 
+  const handleCollapseCollectionPanel = useCallback(() => {
+    captureFunnelEvent(FunnelEvents.experience_picker_closed, {
+      cart_count: cartOrder.length,
+      added_since_open: cartOrder.length > cartCountWhenPickerOpenedRef.current,
+      device_type: getDeviceType(),
+    })
+    setCollectionPanelExpanded(false)
+  }, [cartOrder.length])
+
+  const handleExpandCollectionPanel = useCallback(() => {
+    setPickerEngaged(true)
+    cartCountWhenPickerOpenedRef.current = cartOrder.length
+    setPickerHasBeenOpened(true)
+    captureFunnelEvent(FunnelEvents.experience_picker_opened, {
+      cart_count: cartOrder.length,
+      device_type: getDeviceType(),
+    })
+    setCollectionPanelExpanded(true)
+  }, [cartOrder.length, setPickerEngaged])
+
+  const handleToggleCollectionPanel = useCallback(() => {
+    if (collectionPanelExpanded) {
+      handleCollapseCollectionPanel()
+    } else {
+      handleExpandCollectionPanel()
+    }
+  }, [collectionPanelExpanded, handleCollapseCollectionPanel, handleExpandCollectionPanel])
+
   const handleClosePicker = useCallback(() => {
+    if (pickerLayoutDesktop) {
+      handleCollapseCollectionPanel()
+      return
+    }
     captureFunnelEvent(FunnelEvents.experience_picker_closed, {
       cart_count: cartOrder.length,
       added_since_open: cartOrder.length > cartCountWhenPickerOpenedRef.current,
       device_type: getDeviceType(),
     })
     setIsPickerOpen(false)
-  }, [cartOrder.length])
+  }, [cartOrder.length, pickerLayoutDesktop, handleCollapseCollectionPanel])
 
   const scrollToArtworkPreview = useCallback(() => {
     experienceScrollRootRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -1110,24 +1236,61 @@ export function ExperienceV3Client({
   )
 
   const handleTogglePicker = useCallback(() => {
+    if (pickerLayoutDesktop) {
+      handleToggleCollectionPanel()
+      return
+    }
     if (isPickerOpen) {
       handleClosePicker()
     } else {
       handleOpenPicker()
     }
-  }, [isPickerOpen, handleClosePicker, handleOpenPicker])
+  }, [
+    isPickerOpen,
+    handleClosePicker,
+    handleOpenPicker,
+    pickerLayoutDesktop,
+    handleToggleCollectionPanel,
+  ])
+
+  const dismissCollectionNudge = useCallback(() => {
+    setShowCollectionNudge(false)
+    try {
+      window.localStorage.setItem(COLLECTION_BUTTON_CLICKED_KEY, '1')
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [])
+
+  const handleCollectionButtonClick = useCallback(() => {
+    dismissCollectionNudge()
+    handleTogglePicker()
+  }, [dismissCollectionNudge, handleTogglePicker])
 
   useEffect(() => {
+    if (pickerLayoutDesktop) {
+      if (collectionPanelExpanded) {
+        setHeaderCenterContent(
+          <div className="pointer-events-none mx-auto min-w-0 max-w-[200px] text-center text-foreground md:max-w-[320px]">
+            <p className="truncate text-sm font-semibold text-foreground">Choose your Art</p>
+          </div>
+        )
+      } else {
+        setHeaderCenterContent(null)
+      }
+      return () => setHeaderCenterContent(null)
+    }
     setHeaderCenterContent(
       <button
         type="button"
-        onClick={handleTogglePicker}
+        onClick={handleCollectionButtonClick}
         className={cn(
           'flex shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm',
           'focus-visible:ring-2 focus-visible:ring-offset-2',
           'border-experience-cta/50 bg-transparent text-experience-cta hover:border-experience-cta/75 hover:bg-experience-cta/[0.08]',
           'focus-visible:ring-experience-cta focus-visible:ring-offset-background',
-          isPickerOpen && 'ring-2 ring-experience-cta/70'
+          isPickerOpen && 'ring-2 ring-experience-cta/70',
+          showCollectionNudge && 'animate-collection-btn-attention'
         )}
         aria-label={isPickerOpen ? 'Close the collection picker' : 'Open the collection picker'}
         aria-expanded={isPickerOpen}
@@ -1137,7 +1300,14 @@ export function ExperienceV3Client({
       </button>
     )
     return () => setHeaderCenterContent(null)
-  }, [isPickerOpen, handleTogglePicker, setHeaderCenterContent])
+  }, [
+    isPickerOpen,
+    pickerLayoutDesktop,
+    collectionPanelExpanded,
+    handleCollectionButtonClick,
+    setHeaderCenterContent,
+    showCollectionNudge,
+  ])
 
   const orderItemCount = selectedArtworks.length + lampQuantity
   useEffect(() => {
@@ -1203,7 +1373,7 @@ export function ExperienceV3Client({
 
   const previewLampUnitUsd = lampPrices[0] ?? lampPrice
 
-  const previewInCart = Boolean(previewProduct && cartOrder.includes(previewProduct.id))
+  const previewInCart = Boolean(previewProduct && cartIncludesProductId(cartOrder, previewProduct.id))
 
   const lampInCart = lampQuantity > 0 || cartOrder.includes(lamp.id)
 
@@ -1232,24 +1402,6 @@ export function ExperienceV3Client({
       seasonBandsFallback: activeSeason === 'season2' ? 2 : 1,
     })
   }, [previewProduct, streetEditionByProductId, activeSeason])
-
-  const offerHint = useMemo(() => {
-    if (!previewProduct || previewInCart || previewProduct.id === lamp.id) return null
-    if (showLampBundleCard) {
-      return bundleOfferMode === 'withLamp'
-        ? experienceV3Content.bundleCard.hintWithLamp
-        : experienceV3Content.bundleCard.hintArtworkOnly
-    }
-    if (lampInCart) return experienceV3Content.stickyAddPanel.lampInCartHint
-    return null
-  }, [
-    previewProduct,
-    previewInCart,
-    lamp.id,
-    showLampBundleCard,
-    bundleOfferMode,
-    lampInCart,
-  ])
 
   const previewDisplayTitle = useMemo(
     () => (previewProduct?.title ? capitalizeFirstLetter(previewProduct.title) : null),
@@ -1350,6 +1502,47 @@ export function ExperienceV3Client({
     return computeReservedEditionNumber(editionMetricsForWatch.editionNumberSold, 0)
   }, [editionMetricsForWatch])
 
+  const previewCartEditionHold = useMemo(() => {
+    if (!previewProduct || !previewInCart) return null
+    const key = normalizeShopifyProductId(previewProduct.id)
+    if (!key) return null
+
+    const synced = cartEditionHolds[key] ?? sessionEditionHolds[key]
+    if (synced) {
+      delete optimisticEditionHoldsRef.current[key]
+      return synced
+    }
+
+    let optimistic = optimisticEditionHoldsRef.current[key]
+    if (!optimistic || !isCartEditionHoldActive(optimistic.expiresAt)) {
+      const streetRow = streetEditionByProductId[key]
+      const editionsSold =
+        streetRow?.editionsSold != null && Number.isFinite(streetRow.editionsSold)
+          ? Math.max(0, Math.floor(streetRow.editionsSold))
+          : editionMetricsForWatch?.editionNumberSold ?? null
+      optimistic = {
+        shopifyProductId: key,
+        editionNumber:
+          editionsSold != null
+            ? computeReservedEditionNumber(editionsSold, 0)
+            : previewHoldFallbackEditionNumber,
+        lockedPriceUsd: streetRow?.priceUsd ?? null,
+        expiresAt: cartEditionHoldExpiresAt(),
+      }
+      optimisticEditionHoldsRef.current[key] = optimistic
+    }
+
+    return optimistic
+  }, [
+    previewProduct,
+    previewInCart,
+    cartEditionHolds,
+    sessionEditionHolds,
+    streetEditionByProductId,
+    editionMetricsForWatch?.editionNumberSold,
+    previewHoldFallbackEditionNumber,
+  ])
+
   const reserveEditionLabel = useMemo(() => {
     if (!previewProduct || previewProduct.id === lamp.id) return null
 
@@ -1417,6 +1610,8 @@ export function ExperienceV3Client({
 
   const isSoldOut = pDetail ? !pDetail.availableForSale : false
 
+  const showArtistWorksSlider = Boolean(previewProduct && previewProduct.id !== lamp.id)
+
   const showEditionStrip =
     !isSoldOut &&
     !!previewProduct &&
@@ -1479,15 +1674,20 @@ export function ExperienceV3Client({
 
   const artistCatalogForFilters = useExperienceArtistCatalog()
 
+  /** Desktop push panel open — hero uses the tighter gallery/copy split tuned for the right rail. */
+  const desktopCollectionRailOpen = pickerLayoutDesktop && collectionPanelExpanded
+
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-col bg-background text-foreground">
+    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-background text-foreground">
       <div className="flex min-h-0 flex-1 min-w-0 flex-row">
         <div
           ref={experienceScrollRootRef}
+          data-experience-scroll-root
           className={cn(
-            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden',
+            /* overflow-x-clip preferred; with overflow-y-auto CSS may compute x to hidden — still OK */
+            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip',
             /* Main column scroll — distinct from nested product column overflow-y-auto */
-            'touch-pan-y overflow-y-auto overscroll-y-contain pb-28 lg:pb-32'
+            'touch-pan-y overflow-y-auto overscroll-y-contain pb-28 lg:pb-32 [-webkit-overflow-scrolling:touch]'
           )}
         >
         <section
@@ -1497,22 +1697,25 @@ export function ExperienceV3Client({
           className={cn(
             'flex min-h-0 w-full max-w-full shrink-0 grow-0 flex-col',
             'min-w-0 max-md:max-h-none',
-            /* md:flex-row-reverse: visually swaps the gallery/copy columns on desktop while keeping DOM/tab order (and mobile stacking order) unchanged. */
-            /* md:max-w-[1400px] md:mx-auto: when the picker panel is closed/collapsed the scroll column is much wider than this cap, so the hero
-               centers as a unit instead of stretching edge-to-edge; when the picker is open the column is narrower than the cap, so this has no
-               effect and the row still fills 100% of the available width (gallery flush against the picker's left edge). */
-            'md:h-[82svh] md:min-h-[560px] md:max-w-[1400px] md:mx-auto md:flex-row-reverse md:items-stretch md:justify-center md:gap-6 lg:gap-8 md:pl-4 lg:pl-6 md:pb-5'
+            /* md:flex-row: gallery left, copy right on desktop; DOM order keeps image-first mobile stacking. */
+            'md:h-[82svh] md:min-h-[560px] md:w-full md:flex-row md:items-stretch md:justify-start'
           )}
         >
         <h2 id="experience-v3-hero-heading" className="sr-only">
           Artwork and details
         </h2>
 
-        {/* Gallery — full-bleed on mobile; ~65% of hero on desktop (right column via flex-row-reverse), stretched to fill the hero's full height.
-            Width is reduced by half the row gap so gallery + copy + gap sum to exactly 100% (no overflow/clipping at the right edge). */}
-        <div className="flex w-full max-w-[100vw] flex-col items-stretch md:h-full md:w-[calc(65%-0.75rem)] md:max-w-none lg:w-[calc(68%-1rem)] md:min-w-0 md:shrink-0">
+        {/* Gallery — full-bleed on mobile; ~58% of hero on desktop when the collection rail is open; grows to absorb free width when the rail is collapsed. */}
+        <div
+          className={cn(
+            'flex w-full max-w-[100vw] flex-col items-stretch md:h-full md:min-w-0',
+            desktopCollectionRailOpen
+              ? 'md:w-[min(58%,52rem)] md:shrink-0'
+              : 'md:flex-1 md:max-w-none'
+          )}
+        >
           <div className="relative w-full md:h-full md:[container-type:size]">
-            <div className="relative isolate w-full max-md:overflow-visible md:flex md:h-full md:items-center md:justify-center">
+            <div className="relative isolate w-full max-md:overflow-visible md:flex md:h-full md:items-center md:justify-start">
               {heroImageUrl ? (
                 <div
                   className={cn(
@@ -1524,7 +1727,7 @@ export function ExperienceV3Client({
                   <button
                     type="button"
                     onClick={() => setGalleryZoomOpen(true)}
-                    className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white/90 shadow-sm backdrop-blur-sm transition-colors hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/90"
+                    className="absolute left-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white/90 shadow-sm backdrop-blur-sm transition-colors hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/90"
                     aria-label="Zoom image"
                   >
                     <ZoomIn className="h-3.5 w-3.5" strokeWidth={2.25} />
@@ -1535,7 +1738,11 @@ export function ExperienceV3Client({
                     alt={heroImageAlt}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 767px) 100vw, 65vw"
+                    sizes={
+                      desktopCollectionRailOpen
+                        ? '(max-width: 767px) 100vw, 58vw'
+                        : '(max-width: 767px) 100vw, 72vw'
+                    }
                     unoptimized
                     priority={galleryIndex === getDefaultGalleryIndex(galleryImages.length)}
                     fetchPriority="high"
@@ -1601,20 +1808,25 @@ export function ExperienceV3Client({
           </div>
         </div>
 
-        {/* Product copy — narrower left column on desktop (via flex-row-reverse); centered on mobile */}
+        {/* Product copy — flex-1 beside gallery; centers badges/title/edition strip in the column (panel open or collapsed). */}
         <div
           ref={artworkScrollRef}
           data-experience-artwork-scroll
           className={cn(
-            'flex w-full shrink-0 flex-col overflow-x-hidden',
+            'flex w-full shrink-0 flex-col overflow-x-clip',
             'relative z-10 max-md:flex-none max-md:bg-background max-md:overflow-visible',
-            /* Width reduced by half the row gap to match the gallery column — see gallery column comment above. */
-            'md:w-[calc(35%-0.75rem)] md:min-w-0 md:max-w-md lg:w-[calc(32%-1rem)] md:overflow-visible md:justify-center md:pt-2'
+            'md:flex md:h-full md:min-w-0 md:flex-1 md:flex-col md:items-center md:justify-center md:overflow-visible',
+            !desktopCollectionRailOpen && 'md:px-4 xl:px-8'
           )}
         >
           {previewProduct && pDetail ? (
-            <div className="flex w-full flex-col items-center gap-4 px-5 py-6 pb-8 md:gap-5 md:px-2 md:py-0 md:pb-6">
-              <header className="w-full max-w-xl space-y-2.5 pb-1 text-center md:max-w-none">
+            <div
+              className={cn(
+                'mx-auto flex w-auto flex-col items-center gap-4 py-6 pb-8',
+                'md:gap-5 md:py-0'
+              )}
+            >
+              <header className="w-auto space-y-2.5 pb-1 text-center">
                 {!previewInCart && reserveEditionLabel ? (
                   <ExperienceV3StickyBarProductMeta
                     reserveEditionLabel={reserveEditionLabel}
@@ -1622,6 +1834,28 @@ export function ExperienceV3Client({
                     className="pb-0.5"
                   />
                 ) : null}
+                {previewInCart && previewCartEditionHold ? (
+                  <div className="flex w-auto justify-center">
+                    <EditionHoldIndicator
+                      hold={previewCartEditionHold}
+                      inCart
+                      fallbackEditionNumber={previewHoldFallbackEditionNumber}
+                      variant="banner"
+                      className="mx-auto"
+                    />
+                  </div>
+                ) : previewInCart && reserveEditionLabel ? (
+                  <ExperienceV3StickyBarProductMeta
+                    reserveEditionLabel={reserveEditionLabel}
+                    align="center"
+                    className="pb-0.5"
+                  />
+                ) : null}
+                <ExperienceV3FomoPill
+                  productId={previewProduct.id}
+                  previewInCart={previewInCart}
+                  className="pb-0.5"
+                />
                 {artistProfileTarget ? (
                   <button
                     type="button"
@@ -1664,19 +1898,8 @@ export function ExperienceV3Client({
                 </div>
               </header>
 
-              {previewInCart && previewCartEditionHold ? (
-                <div className="w-full max-w-xl md:max-w-none">
-                  <EditionHoldIndicator
-                    hold={previewCartEditionHold}
-                    inCart
-                    fallbackEditionNumber={previewHoldFallbackEditionNumber}
-                    variant="banner"
-                  />
-                </div>
-              ) : null}
-
               {editionStripProps ? (
-                <div className="w-full max-w-xl overflow-hidden rounded-xl border border-border bg-experience-surface/60 md:max-w-none">
+                <div className="w-auto overflow-visible rounded-xl border border-border bg-experience-surface/60">
                   <ExperienceV3EditionStrip {...editionStripProps} />
                 </div>
               ) : null}
@@ -1700,15 +1923,12 @@ export function ExperienceV3Client({
               <ExperienceV3LampBundleCard
                 lamp={lamp}
                 artwork={previewProduct}
-                artworkUnitUsd={previewArtworkUnitUsd}
-                lampUnitUsd={previewLampUnitUsd}
                 disabled={isSoldOut}
                 onAddWithLamp={handleAddPreviewWithLamp}
                 onArtworkOnly={handleAddPreviewArtworkOnly}
                 artistName={editionArtistName}
                 mode={bundleOfferMode}
                 onModeChange={setBundleOfferMode}
-                nextStepChip={streetLadderBlock?.nextStepChip ?? null}
               />
             ) : undefined
           }
@@ -1747,7 +1967,7 @@ export function ExperienceV3Client({
           </section>
         ) : null}
 
-        {previewProduct && previewProduct.id !== lamp.id ? (
+        {showArtistWorksSlider ? (
           <ExperienceV3ArtistWorksSlider
             currentProduct={previewProduct}
             catalog={allProducts}
@@ -1758,6 +1978,10 @@ export function ExperienceV3Client({
             cartProductIds={cartOrder}
             onPreview={handlePreviewFromPicker}
             onQuickAdd={(product) => {
+              if (cartIncludesProductId(cartOrder, product.id)) {
+                handleToggleSelect(product)
+                return
+              }
               addArtworkToCart(product)
             }}
             lockedArtworkPrices={lockedArtworkPrices}
@@ -1773,10 +1997,9 @@ export function ExperienceV3Client({
           aria-labelledby="experience-v3-artist-heading"
           className={cn(
             'relative z-0 w-full max-w-full shrink-0',
-            'mt-6 border-t border-border pt-8 pb-10',
-            'bg-experience-surface',
-            'md:mt-8 md:pt-10 md:pb-12',
-            'scroll-mt-[max(4.5rem,env(safe-area-inset-top))]'
+            'bg-experience-surface pb-10 md:pb-12',
+            'scroll-mt-[max(4.5rem,env(safe-area-inset-top))]',
+            !showArtistWorksSlider && 'mt-6 border-t border-border pt-8 md:mt-8 md:pt-10'
           )}
           data-experience-v3-below-media=""
         >
@@ -1805,51 +2028,74 @@ export function ExperienceV3Client({
         </section>
 
         </div>
-        {pickerHasBeenOpened && pickerLayoutDesktop && (
-          <div
-            className={cn(
-              'hidden h-full min-h-0 shrink-0 flex-col overflow-hidden transition-[width] duration-300 ease-out lg:flex',
-              isPickerOpen ? 'w-[min(440px,40vw)]' : 'w-0'
-            )}
-          >
-            <ArtworkPickerSheet
-              presentation="pushPanel"
-              showDoneButton={false}
-              isOpen={isPickerOpen}
-              onClose={handleClosePicker}
-              products={filteredProducts}
-              selectedArtworks={selectedArtworks}
-              lampPreviewOrder={lampPreviewOrder}
-              onToggleSelect={handleToggleSelect}
-              lastAddedProductId={lastAddedProductId}
-              hasMore={hasMore}
-              onLoadMore={() => loadMoreForSeason(activeSeason)}
-              activeSeason={activeSeason}
-              onSeasonChange={setActiveSeason}
-              filters={filters}
-              onFiltersChange={setFilters}
-              filterOpen={filterOpen}
-              onFilterOpen={() => setFilterOpen(true)}
-              onFilterClose={() => setFilterOpen(false)}
-              spotlightData={spotlightData}
-              spotlightProducts={spotlightProducts.length > 0 ? spotlightProducts : spotlightProductsFromApi}
-              onSpotlightSelect={handleSpotlightSelect}
-              productsForFilterPanel={productsForFilterPanel}
-              cartOrder={cartOrder}
-              spotlightBannerExpanded={spotlightExpanded}
-              streetEditionByProductId={streetEditionByProductId}
-              featuredBundleOffer={featuredBundleFilterOffer}
-              artistCatalogForFilters={artistCatalogForFilters}
-              pickerLamp={lamp}
-              lampQuantity={lampQuantity}
-              lampPriceUsd={lampPrice}
-              pickerCardMode="previewAndQuickAdd"
-              onPreviewProduct={handlePreviewFromPicker}
-              onQuickAddProduct={handleQuickAddFromPicker}
-              previewProductId={previewProduct?.id ?? null}
-              sheetVariant="rightRail"
-            />
-          </div>
+        {pickerLayoutDesktop && (
+          <>
+            <button
+              type="button"
+              onClick={handleToggleCollectionPanel}
+              className={cn(
+                'fixed right-0 z-[130] hidden h-8 w-8 items-center justify-center rounded-l-md transition-colors lg:flex',
+                shopUnifiedTopBarTopInsetClass,
+                'border border-r-0 border-border/80 bg-white text-experience-cta shadow-sm',
+                'hover:bg-neutral-50',
+                'dark:border-transparent dark:bg-experience-cta dark:!text-neutral-900 dark:shadow-md',
+                'dark:hover:bg-experience-cta-hover',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-cta focus-visible:ring-offset-2'
+              )}
+              aria-label={collectionPanelExpanded ? 'Hide collection panel' : 'Show collection panel'}
+              aria-expanded={collectionPanelExpanded}
+            >
+              <PanelRight className="h-3.5 w-3.5 shrink-0 text-current" strokeWidth={2.25} aria-hidden />
+            </button>
+            <div
+              className={cn(
+                'hidden h-full min-h-0 shrink-0 overflow-hidden transition-[width] duration-300 ease-out lg:flex',
+                collectionPanelExpanded ? 'w-[min(440px,40vw)]' : 'w-0'
+              )}
+            >
+              <ArtworkPickerSheet
+                presentation="pushPanel"
+                showDoneButton={false}
+                showPanelCollapseToggle={false}
+                isOpen
+                onClose={handleCollapseCollectionPanel}
+                products={filteredProducts}
+                selectedArtworks={selectedArtworks}
+                lampPreviewOrder={lampPreviewOrder}
+                onToggleSelect={handleToggleSelect}
+                lastAddedProductId={lastAddedProductId}
+                hasMore={hasMore}
+                isLoadingMore={loadingMore}
+                onLoadMore={() => loadMoreForSeason(activeSeason)}
+                activeSeason={activeSeason}
+                onSeasonChange={setActiveSeason}
+                filters={filters}
+                onFiltersChange={setFilters}
+                filterOpen={filterOpen}
+                onFilterOpen={() => setFilterOpen(true)}
+                onFilterClose={() => setFilterOpen(false)}
+                spotlightData={spotlightData}
+                spotlightProducts={spotlightProducts.length > 0 ? spotlightProducts : spotlightProductsFromApi}
+                onSpotlightSelect={handleSpotlightSelect}
+                productsForFilterPanel={productsForFilterPanel}
+                cartOrder={cartOrder}
+                spotlightBannerExpanded={spotlightExpanded}
+                streetEditionByProductId={streetEditionByProductId}
+                featuredBundleOffer={featuredBundleFilterOffer}
+                artistCatalogForFilters={artistCatalogForFilters}
+                pickerLamp={lamp}
+                lampQuantity={lampQuantity}
+                lampPriceUsd={lampPrice}
+                pickerCardMode="previewAndQuickAdd"
+                onPreviewProduct={handlePreviewFromPicker}
+                onQuickAddProduct={handleQuickAddFromPicker}
+                previewProductId={previewProduct?.id ?? null}
+                lockedArtworkPrices={lockedArtworkPrices}
+                streetLadderPrices={streetLadderPrices}
+                sheetVariant="rightRail"
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -1865,6 +2111,7 @@ export function ExperienceV3Client({
           onToggleSelect={handleToggleSelect}
           lastAddedProductId={lastAddedProductId}
           hasMore={hasMore}
+          isLoadingMore={loadingMore}
           onLoadMore={() => loadMoreForSeason(activeSeason)}
           activeSeason={activeSeason}
           onSeasonChange={setActiveSeason}
@@ -1889,6 +2136,8 @@ export function ExperienceV3Client({
           onPreviewProduct={handlePreviewFromPicker}
           onQuickAddProduct={handleQuickAddFromPicker}
           previewProductId={previewProduct?.id ?? null}
+          lockedArtworkPrices={lockedArtworkPrices}
+          streetLadderPrices={streetLadderPrices}
           sheetVariant="rightRail"
         />
       )}
@@ -1937,10 +2186,14 @@ export function ExperienceV3Client({
         previewDisplayTitle={previewDisplayTitle}
         artistName={editionArtistName}
         reserveEditionLabel={reserveEditionLabel}
+        cartEditionHold={previewCartEditionHold}
+        cartEditionHoldFallbackNumber={previewHoldFallbackEditionNumber}
         addButtonLabel={addButtonLabel}
         addButtonEditionParts={addButtonEditionParts}
         previewInCart={previewInCart}
         isSoldOut={isSoldOut}
+        onOpenCollection={handleCollectionButtonClick}
+        collectionPickerOpen={isPickerOpen}
         bundleOffer={
           showLampBundleCard
             ? {
@@ -1963,7 +2216,6 @@ export function ExperienceV3Client({
               }
             : undefined
         }
-        offerHint={offerHint}
         onPrimaryAction={() => {
           if (!previewProduct || previewProduct.id === lamp.id || previewInCart) return
           if (showLampBundleCard && bundleOfferMode === 'withLamp') {

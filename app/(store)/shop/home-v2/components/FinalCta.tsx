@@ -5,6 +5,10 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { getStorePageContent } from '@/lib/content/site-content'
+import {
+  getWelcomeIncentiveConfig,
+  markWelcomeIncentiveClaimed,
+} from '@/lib/shop/welcome-incentive'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 const homeV2LandingContent = getStorePageContent('homeV2')
@@ -20,6 +24,7 @@ export function FinalCta() {
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -12% 0px' })
   const [email, setEmail] = React.useState('')
   const [state, setState] = React.useState<NewsletterState>({ status: 'idle' })
+  const welcome = React.useMemo(() => getWelcomeIncentiveConfig(), [])
 
   const onSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -40,6 +45,7 @@ export function FinalCta() {
         if (!res.ok) {
           throw new Error(data?.error || 'Signup failed. Please try again.')
         }
+        if (welcome.enabled) markWelcomeIncentiveClaimed(welcome)
         setState({ status: 'success' })
         setEmail('')
       } catch (err) {
@@ -47,7 +53,7 @@ export function FinalCta() {
         setState({ status: 'error', message })
       }
     },
-    [email],
+    [email, welcome],
   )
 
   return (
@@ -153,7 +159,9 @@ export function FinalCta() {
             {state.status === 'error'
               ? state.message
               : state.status === 'success'
-                ? 'Thanks — keep an eye on your inbox.'
+                ? welcome.enabled
+                  ? `Thanks — ${welcome.successHint}`
+                  : 'Thanks — keep an eye on your inbox.'
                 : ''}
           </div>
         </form>

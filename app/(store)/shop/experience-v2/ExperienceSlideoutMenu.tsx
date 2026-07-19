@@ -67,7 +67,7 @@ export function ExperienceSlideoutMenu() {
       {lampQuantity > 0 && cartCount === 0 && (
         <span
           className={cn(
-            'inline-flex max-w-[min(9.5rem,46vw)] items-center truncate rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-tight sm:max-w-none sm:px-2.5 sm:py-1 sm:text-xs',
+            'hidden md:inline-flex max-w-[min(9.5rem,46vw)] items-center truncate rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-tight sm:max-w-none sm:px-2.5 sm:py-1 sm:text-xs',
             'border-violet-300 bg-violet-50 text-violet-800',
             'dark:border-violet-500/50 dark:bg-violet-950/80 dark:text-violet-100'
           )}
@@ -133,7 +133,7 @@ export function ExperienceSlideoutMenu() {
           className="shrink-0 border-b border-neutral-200/80 px-4 py-1 text-center text-[10px] text-neutral-500 dark:border-white/5 dark:text-[#a09090] sm:text-[11px]"
           role="status"
         >
-          Free Worldwide Shipping
+          Free worldwide shipping · 9–15 business days
         </div>
       )}
 

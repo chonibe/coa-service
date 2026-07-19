@@ -19,7 +19,7 @@ export const experienceV3ArtworkInfoTabs: ExperienceV3ProductInfoTab[] = [
       'Each print is made for The Street Lamp’s backlit frame — slim, durable, and easy to swap.',
     ],
     bullets: [
-      '21 × 14 cm display size',
+      '21.5×14.5×7 cm display size',
       'Premium 1 mm polycarbonate vinyl',
       'High-definition print on lightweight, illumination-friendly stock',
       'Slides in and out of the lamp in seconds — no tools',

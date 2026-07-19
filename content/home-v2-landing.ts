@@ -98,7 +98,7 @@ export const homeV2LandingContent = {
   },
 
   trust: [
-    'Free worldwide shipping',
+    'Free worldwide shipping · 9–15 business days',
     '12-month guarantee',
     '30-day returns',
     'Live support · 7am–midnight',
@@ -191,8 +191,8 @@ export const homeV2LandingContent = {
 
   artistsWall: {
     eyebrow: 'The Collection',
-    title: '100+ Artists.\nAcross the roster.',
-    titleEmphasis: 'Across the roster.',
+    title: '100+ Artists.\nFrom Around the World.',
+    titleEmphasis: 'From Around the World.',
     ctaLabel: 'View all artists',
     /** Short clips in the carousel above the image grid (deduped URLs) */
     carouselVideos: [
@@ -473,7 +473,11 @@ export const homeV2LandingContent = {
     eyebrow: 'What collectors say',
     title: 'Seen in 3,000+\ncollector homes.',
     titleEmphasis: '3,000+',
-    ratingLabel: '5.0 · Verified reviews',
+    /**
+     * Fallback only when Yotpo aggregate is unavailable.
+     * Live pages prefer `formatReviewRatingLabel` (average + real count).
+     */
+    ratingLabel: 'Collector reviews',
     videos: [
       {
         author: '@streetcollector_',
@@ -508,7 +512,7 @@ export const homeV2LandingContent = {
     {
       icon: '✈',
       title: 'Free Worldwide Shipping',
-      body: 'Delivery is on us, wherever you are ordering from.',
+      body: 'Delivery is on us — most orders arrive within 9–15 business days after shipping (customs not included).',
     },
     {
       icon: '⬡',
@@ -530,7 +534,7 @@ export const homeV2LandingContent = {
       {
         question: 'How big are the Street Lamps?',
         answer:
-          'They are sized to sit comfortably on a desk, shelf, or side table without disappearing into the room or taking it over.',
+          'Each Street Lamp measures 21.5×14.5×7 cm (about 8.5×5.7×2.8 in) and weighs roughly 1.1 kg (2.4 lb). Compact enough for a desk or shelf, substantial enough to feel like a real design piece.',
       },
       {
         question: 'Is it easy to swap the artworks?',
@@ -545,7 +549,7 @@ export const homeV2LandingContent = {
       {
         question: 'How long does shipping take?',
         answer:
-          'Most orders arrive within 5 to 10 business days. You will get tracking once the order is on the way.',
+          'Once shipped, delivery takes approximately 9–15 business days (customs not included). You will get tracking once the order is on the way.',
       },
       {
         question: 'Do artwork prices change as editions sell?',

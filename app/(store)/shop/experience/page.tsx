@@ -91,7 +91,11 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
   const initialSelectedArtwork = initialArtworkHandle
     ? await getProduct(initialArtworkHandle).catch(() => null)
     : null
-  const initialPreviewProduct = initialSelectedArtwork ?? pickInitialPreviewProduct(productsSeason2, productsSeason1)
+  // Server picks once so hero preload + initialGalleryProduct stay aligned with the client.
+  // Randomize only when there is no `?artwork=` deep link. Client may still restore last-viewed
+  // from localStorage (higher priority than this random pick, lower than `?artwork=`).
+  const initialPreviewProduct =
+    initialSelectedArtwork ?? pickInitialPreviewProduct(productsSeason1, productsSeason2)
   const initialGalleryProduct = initialPreviewProduct?.handle
     ? ((await getProduct(initialPreviewProduct.handle).catch(() => null)) ?? initialPreviewProduct)
     : null

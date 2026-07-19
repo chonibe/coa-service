@@ -18,10 +18,10 @@ export default function ExperienceV2Layout({ children }: { children: ReactNode }
     <ExperienceOrderProvider>
       <ExperienceThemeProvider>
         <ExperienceAuthProvider>
-          <div className="relative z-[60] flex h-dvh min-h-dvh w-full flex-col overflow-hidden bg-background">
+          <div className="relative z-[60] flex h-dvh max-h-dvh min-h-0 w-full flex-col overflow-hidden bg-background">
             <ExperienceSlideoutMenu />
-            <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
-              {children}
+            <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+              <div className="absolute inset-0 flex min-h-0 flex-col overflow-hidden">{children}</div>
             </div>
           </div>
         </ExperienceAuthProvider>

@@ -36,8 +36,7 @@
 .tQuote,
 .gTitle,
 .faqQ,
-.finalTitle,
-.artistsBadgeMoreNum {
+.finalTitle {
   font-family: var(--font-landing-serif), Georgia, serif;
 }
 
@@ -57,8 +56,7 @@
 .btnOutline,
 .tVidName,
 .tImgName,
-.tAuthor,
-.artistBadgeName {
+.tAuthor {
   font-family: var(--font-landing-sans), Arial, sans-serif;
   letter-spacing: 0.08em;
 }
@@ -118,11 +116,18 @@
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
-  color: #ffffff;
+  color: #171515;
   background: var(--cta);
   text-decoration: none;
   padding: 11px 24px;
   transition: background 0.25s;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
 }
 
 :global(.dark) .navCta {
@@ -195,7 +200,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  /* Lighter veil so more of the clip reads through; dark band only where copy sits */
+  /* Video sits on the right — darken the left edge where it meets the copy column */
   background: linear-gradient(to right, color-mix(in srgb, var(--experience-bg) 50%, transparent) 0%, color-mix(in srgb, var(--experience-bg) 12%, transparent) 45%, transparent 72%);
 }
 
@@ -203,6 +208,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  /* Left column: outer edge padding, then space toward the video */
   padding: 120px 64px 80px 72px;
   position: relative;
   z-index: 2;
@@ -261,7 +267,7 @@
   align-items: center;
   gap: 10px;
   background: var(--cta);
-  color: #ffffff;
+  color: #171515;
   text-decoration: none;
   font-size: 12px;
   font-weight: 500;
@@ -351,10 +357,22 @@
 
 .sectionHeader {
   padding: 100px 72px 64px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lampHeader {
   padding: 0 72px 64px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .eyebrow {
@@ -365,14 +383,12 @@
   margin-bottom: 16px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
 }
 
 .eyebrow::before {
-  content: '';
-  width: 20px;
-  height: 1px;
-  background: var(--experience-highlight);
+  display: none;
 }
 
 .sectionTitle {
@@ -380,6 +396,8 @@
   font-weight: 400;
   line-height: 1.1;
   color: var(--title);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lampFeature {
@@ -629,15 +647,20 @@
 
 .bestSellersHeader {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 24px;
   padding: 0 72px 40px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .bestSellersHeaderActions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 16px;
   flex-shrink: 0;
 }
@@ -677,7 +700,8 @@
   padding: 4px 72px 8px;
   scrollbar-width: none;
   cursor: grab;
-  touch-action: pan-x;
+  /* pan-x alone blocks vertical page scroll when the gesture starts on this strip */
+  touch-action: pan-x pan-y;
 }
 
 .bestSellersScroll:active {
@@ -712,11 +736,29 @@
 
 .bestSellersCardImg {
   object-fit: cover;
-  transition: transform 0.35s ease;
+  transition: transform 0.35s ease, opacity 0.3s ease;
 }
 
 .bestSellersCard:hover .bestSellersCardImg {
   transform: scale(1.03);
+}
+
+.bestSellersCardImgHover {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .bestSellersCard:hover .bestSellersCardImgPrimary {
+    opacity: 0;
+  }
+
+  .bestSellersCard:hover .bestSellersCardImgHover {
+    opacity: 1;
+    transform: scale(1.03);
+  }
 }
 
 .bestSellersCardPlaceholder {
@@ -825,10 +867,24 @@
 
 .artistsHeader {
   padding: 0 72px 56px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.artistsCtaRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 72px 56px;
+  margin: 0 auto;
 }
 
 .artistsCarouselWrap {
-  padding: 0 0 48px;
+  padding: 0 0 32px;
   margin: 0 auto;
   max-width: 100%;
 }
@@ -875,7 +931,7 @@
     padding-inline: max(72px, env(safe-area-inset-left));
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 186, 148, 0.35) transparent;
-    touch-action: pan-x;
+    touch-action: pan-x pan-y;
   }
 
   .artistsCarouselMarqueeTrack {
@@ -911,24 +967,6 @@
     );
   }
 
-  .artistsBadgesMarquee {
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      #000 52px,
-      #000 calc(100% - 52px),
-      transparent
-    );
-  }
-
-  .artistsBadgesMarqueeTrack {
-    gap: 16px;
-  }
-
-  .artistBadgeMarqueeSlide {
-    width: 76px;
-  }
-
   .artistsVideoSlide {
     flex-basis: min(78vw, 280px);
     width: min(78vw, 280px);
@@ -939,222 +977,12 @@
   .artistsCarouselMarquee {
     padding-inline: 48px;
   }
-
-  .artistsBadgesMarquee {
-    padding-inline: 48px;
-  }
 }
 
 @media (max-width: 520px) and (prefers-reduced-motion: reduce) {
   .artistsCarouselMarquee {
     padding-inline: 16px;
   }
-
-  .artistsBadgesMarquee {
-    padding-inline: 16px;
-  }
-}
-
-/* Artist profile circles — infinite marquee, scroll direction opposite to videos */
-.artistsBadgesCarouselWrap {
-  padding: 0 0 40px;
-  margin: 0 auto;
-  max-width: 100%;
-}
-
-.artistsBadgesMarquee {
-  overflow: hidden;
-  width: 100%;
-  padding: 10px 0 8px;
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 8%,
-    #000 92%,
-    transparent
-  );
-}
-
-
-.artistsBadgesMarqueeTrack {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: 20px;
-  width: max-content;
-  animation: artistsBadgesMarqueeGlide 100s linear infinite;
-  will-change: transform;
-}
-
-/* Videos: 0 → -50% (content drifts one way); badges: -50% → 0 (opposite drift) */
-@keyframes artistsBadgesMarqueeGlide {
-  from {
-    transform: translate3d(-50%, 0, 0);
-  }
-
-  to {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .artistsBadgesMarquee {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    mask-image: none;
-    padding-inline: max(72px, env(safe-area-inset-left));
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 186, 148, 0.35) transparent;
-    touch-action: pan-x;
-  }
-
-  .artistsBadgesMarqueeTrack {
-    animation: none;
-  }
-}
-
-.artistBadgeMarqueeSlide {
-  flex: 0 0 auto;
-  width: 84px;
-  display: flex;
-  justify-content: center;
-}
-
-.artistBadge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 76px;
-  flex: 0 0 auto;
-}
-
-.artistBadgeAvatar {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid color-mix(in srgb, var(--experience-border) 85%, transparent);
-  background: var(--card);
-  transition:
-    border-color 0.2s,
-    transform 0.25s ease,
-    box-shadow 0.2s;
-}
-
-.artistBadgeAvatar img {
-  transition:
-    transform 0.35s ease,
-    filter 0.25s;
-}
-
-.artistBadge:hover .artistBadgeAvatar {
-  border-color: color-mix(in srgb, var(--experience-highlight) 38%, transparent);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--experience-text) 12%, transparent);
-}
-
-.artistBadge:hover .artistBadgeAvatar img {
-  transform: scale(1.07);
-  filter: brightness(1) saturate(1.06);
-}
-
-.artistBadgeName {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--experience-text-secondary);
-  text-align: center;
-  line-height: 1.25;
-  max-width: 76px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  border-radius: 4px;
-  padding: 2px 4px;
-}
-
-.artistsBadgeMore {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: max-content;
-  min-width: 76px;
-  flex: 0 0 auto;
-  text-decoration: none;
-  color: inherit;
-}
-
-.artistsBadgeMoreProminent {
-  gap: 8px;
-  min-width: 88px;
-}
-
-.artistsBadgeMoreProminent .artistsBadgeMoreCircle {
-  width: 74px;
-  height: 74px;
-}
-
-.artistsBadgeMoreProminent .artistsBadgeMoreNum {
-  font-size: 24px;
-}
-
-.artistsBadgeMoreProminent .artistsBadgeMoreCaption {
-  font-size: 10px;
-  letter-spacing: 0.07em;
-  max-width: 94px;
-}
-
-.artistsBadgeMoreCircle {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--cta);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    background 0.2s,
-    transform 0.2s ease,
-    box-shadow 0.2s;
-}
-
-.artistsBadgeMore:hover .artistsBadgeMoreCircle {
-  background: var(--cta-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--experience-text) 12%, transparent);
-}
-
-.artistsBadgeMoreNum {
-  font-size: 20px;
-  font-weight: 400;
-  color: #ffffff;
-  line-height: 1;
-}
-
-:global(.dark) .artistsBadgeMoreNum {
-  color: #171515;
-}
-
-.artistsBadgeMoreCaption {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-align: center;
-  line-height: 1.25;
-  max-width: 76px;
-  color: var(--peach);
-  transition: color 0.2s;
-}
-
-.artistsBadgeMore:hover .artistsBadgeMoreCaption {
-  color: var(--peach2);
 }
 
 .testimonialsSection {
@@ -1164,8 +992,10 @@
 
 .testimonialsHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   margin-bottom: 64px;
   flex-wrap: wrap;
   gap: 24px;
@@ -1180,7 +1010,8 @@
 .tmoTrustPill {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  align-self: center;
   gap: 6px;
   padding: 14px 20px;
   border-radius: 999px;
@@ -1201,7 +1032,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-  text-align: right;
+  text-align: center;
   max-width: 14rem;
 }
 
@@ -1444,6 +1275,7 @@
 .gItem {
   padding: 60px 56px;
   border-right: 1px solid var(--border);
+  text-align: center;
 }
 
 .gItem:last-child {
@@ -1454,6 +1286,8 @@
   font-size: 28px;
   margin-bottom: 18px;
   display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .gTitle {
@@ -1472,6 +1306,10 @@
   padding: 100px 72px;
   max-width: 900px;
   margin: 0 auto;
+}
+
+.faqSection > div:first-of-type {
+  text-align: center;
 }
 
 .faqItem {
@@ -1661,12 +1499,12 @@
   .lampHeader,
   .sectionHeader,
   .artistsHeader,
+  .bestSellersHeader,
   .testimonialsSection,
   .faqSection {
     max-width: 1280px;
-  }
-  .artistsBadgesCarouselWrap {
-    padding-inline: 56px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
@@ -1791,7 +1629,7 @@
   .finalBtns .btnPrimary {
     display: none;
   }
-  /* Center section headings + narrative copy (desktop stays left-aligned) */
+  /* Section headings stay centered on desktop + mobile (base styles) */
   .sectionHeader,
   .lampHeader,
   .artistsHeader,
@@ -1916,6 +1754,9 @@
     margin-left: auto;
     margin-right: auto;
   }
+  .artistsCtaRow {
+    padding: 0 24px 48px;
+  }
   .bestSellersHeader {
     flex-direction: column;
     align-items: center;
@@ -1940,31 +1781,6 @@
   .bestSellersCard {
     flex-basis: min(58vw, 220px);
     width: min(58vw, 220px);
-  }
-  .artistsBadgesCarouselWrap {
-    padding: 0 20px 28px;
-  }
-
-  .artistsBadgesMarqueeTrack {
-    gap: 14px;
-  }
-
-  .artistBadgeMarqueeSlide {
-    width: 72px;
-  }
-
-  .artistBadgeAvatar,
-  .artistsBadgeMoreProminent .artistsBadgeMoreCircle {
-    width: 48px;
-    height: 48px;
-  }
-
-  .artistsBadgeMoreProminent .artistsBadgeMoreNum {
-    font-size: 19px;
-  }
-
-  .artistsBadgeMoreNum {
-    font-size: 17px;
   }
   .testimonialsSection {
     padding: 72px 20px;
@@ -2062,7 +1878,7 @@
   .tmoVideoRail {
     display: flex;
     overflow-x: auto;
-    touch-action: pan-x;
+    touch-action: pan-x pan-y;
     gap: 12px;
     padding: 0 0 10px;
     margin-bottom: 28px;

@@ -1,26 +1,40 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
 import { formatTrustStatCount } from '@/lib/shop/trust-stat-placeholders'
+import type { ReviewRatingSummary } from '@/lib/shop/format-review-rating-label'
+import {
+  formatReviewCountStatLabel,
+  formatReviewStarStat,
+} from '@/lib/shop/format-review-rating-label'
 
 function getVideoType(url: string): string {
   return url.toLowerCase().includes('.mov') ? 'video/quicktime' : 'video/mp4'
 }
 
-export function LandingHero() {
+export type LandingHeroProps = {
+  reviewSummary?: ReviewRatingSummary | null
+}
+
+export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
   const { hero } = homeV2LandingContent
   const [animated, setAnimated] = useState(false)
-  const statTargets = useMemo(
-    () => hero.stats.map((s) => s.target ?? null),
-    [hero.stats]
-  )
-  const statFloors = useMemo(
-    () => hero.stats.map((s) => s.target ?? 0),
-    [hero.stats]
-  )
+  const starStat = formatReviewStarStat(reviewSummary)
+  const reviewCountLabel = formatReviewCountStatLabel(reviewSummary)
+
+  const stats = hero.stats.map((s) => {
+    if (s.label !== 'Rated') return s
+    if (starStat && reviewCountLabel) {
+      return { ...s, fixedText: starStat, label: reviewCountLabel }
+    }
+    return s
+  })
+
+  const statTargets = stats.map((s) => s.target ?? null)
+  const statFloors = stats.map((s) => s.target ?? 0)
   const [values, setValues] = useState<number[]>(() => [...statFloors])
 
   useEffect(() => {
@@ -66,19 +80,6 @@ export function LandingHero() {
 
   return (
     <section className={styles.hero} aria-label="Hero">
-      <div className={styles.heroMedia} aria-hidden>
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster={'videoPosterUrl' in hero ? (hero as { videoPosterUrl?: string }).videoPosterUrl : undefined}
-        >
-          <source src={hero.videoUrl} type={getVideoType(hero.videoUrl)} />
-        </video>
-      </div>
-
       <div className={styles.heroContent}>
         <div className={styles.heroEyebrow}>{hero.eyebrow}</div>
         <h1
@@ -109,7 +110,7 @@ export function LandingHero() {
         </Link>
 
         <div className={styles.heroStats}>
-          {hero.stats.map((s, i) => {
+          {stats.map((s, i) => {
             const text = s.fixedText
               ? s.fixedText
               : s.target
@@ -130,6 +131,27 @@ export function LandingHero() {
             )
           })}
         </div>
+      </div>
+
+      <div className={styles.heroVisual} aria-hidden>
+        <video
+          className={styles.heroVideo}
+          autoPlay
+          muted
+          defaultMuted
+          loop
+          playsInline
+          preload="metadata"
+          poster={hero.videoPosterUrl}
+          onLoadedMetadata={(e) => {
+            const el = e.currentTarget
+            el.muted = true
+            el.defaultMuted = true
+            el.volume = 0
+          }}
+        >
+          <source src={hero.videoUrl} type={getVideoType(hero.videoUrl)} />
+        </video>
       </div>
     </section>
   )

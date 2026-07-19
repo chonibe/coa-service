@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { experienceCheckoutCtaRadiusClass } from '@/lib/shop/street-collector-cta'
 import { cn } from '@/lib/utils'
 import { GooglePayMark, PAYPAL_LOGO_URL } from './PaymentButtonAssets'
 
@@ -63,7 +64,8 @@ export function CheckoutButton({
       disabled={disabled}
       data-testid="place-order-button"
       className={cn(
-        'w-full py-3.5 rounded-lg text-base font-semibold flex items-center justify-center gap-2 mt-4',
+        'w-full py-3.5 text-base font-semibold flex items-center justify-center gap-2 mt-4',
+        experienceCheckoutCtaRadiusClass,
         'transition-all duration-200',
         disabled
           ? 'bg-experience-surface-2 text-experience-text-muted cursor-not-allowed'

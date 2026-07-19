@@ -167,7 +167,7 @@ export function FeaturedArtistBundleSection({
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
-              'touch-pan-x flex max-w-full min-w-0 items-end justify-start gap-1 overflow-x-auto overscroll-x-contain overscroll-y-auto pb-1 sm:gap-2 md:gap-3',
+              'flex max-w-full min-w-0 items-end justify-start gap-1 overflow-x-auto overscroll-x-contain overscroll-y-auto pb-1 [touch-action:pan-x_pan-y] sm:gap-2 md:gap-3',
               'scrollbar-hide',
               isDesktop && items.length > 1 && 'cursor-grab select-none active:cursor-grabbing'
             )}
@@ -298,7 +298,7 @@ export function FeaturedArtistBundleSection({
           className={cn(
             'mt-4 w-full rounded-xl px-4 py-3.5 text-center text-base font-semibold tracking-tight shadow-md transition-all duration-200',
             'active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50',
-            'bg-experience-cta text-white shadow-black/20 hover:bg-experience-cta-hover dark:text-neutral-900 dark:shadow-black/30'
+            'bg-experience-cta text-white shadow-black/20 hover:bg-experience-cta-hover dark:shadow-black/30'
           )}
         >
           Add to cart

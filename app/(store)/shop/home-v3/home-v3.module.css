@@ -81,6 +81,13 @@
   color: var(--text);
 }
 
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
 .navCta,
 .primaryButton,
 .secondaryButton {

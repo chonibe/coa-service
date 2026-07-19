@@ -207,6 +207,17 @@ Start with one component (e.g., GalleryReveal) and add others incrementally.
 
 ---
 
+## Change log
+
+| Version | Date | Notes |
+|---------|------|--------|
+| 2026-07-11 | Artists wall: headline **100+ Artists / From Around the World** (replaces “Across the roster”); removed artist name-badge roster marquee; visual video marquee + centered `btnOutline` CTA. Implementation: [`components/ArtistsWall.tsx`](./components/ArtistsWall.tsx), [`landing.module.css`](./landing.module.css), [`content/home-v2-landing.ts`](../../../../content/home-v2-landing.ts). |
+| 2026-07-19 | Home toolbar cart chip ([`LandingNav`](./components/LandingNav.tsx) + [`ShopCollectionCartChip`](../../../../components/shop/navigation/ShopCollectionCartChip.tsx)); best-sellers hover → second image; force-mute hero/testimonial/artists videos (incl. Yaroslav); FAQ lamp size **21.5×14.5×7 cm**. |
+| 2026-07-19 | Artists wall mobile autoplay: [`ArtistsWall`](./components/ArtistsWall.tsx) adds `autoPlay` + programmatic mute/`playsInline`/`webkit-playsinline`, in-view `play()` with `canplay`/`loadeddata` retries, and debounced pause so CSS marquee intersection thrash does not abort playback. Hero + testimonials get the same mute+retry pattern (`defaultMuted` + `volume = 0` on metadata). |
+| 2026-07-19 | Live Yotpo review badge (hero + testimonials) via [`getYotpoStoreReviewSummary`](../../../../lib/shop/yotpo-store-reviews.ts) → `formatReviewRatingLabel` (“5.0 from N reviews”); never invents counts. First-visit welcome strip [`WelcomeIncentiveStrip`](../../../../components/shop/WelcomeIncentiveStrip.tsx) + Final CTA code reveal; config in [`welcome-incentive.ts`](../../../../lib/shop/welcome-incentive.ts) / `.env.example`. |
+
+---
+
 ## Credits
 
 Built using:

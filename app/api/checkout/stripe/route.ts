@@ -8,6 +8,7 @@ import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
 import { getStripeCheckoutAllowedShippingCountryCodes } from '@/lib/shopify/shipping-zone-country-codes'
+import { stripeLineItemDescription } from '@/lib/shop/stripe-line-item-description'
 
 /**
  * Stripe Checkout API
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
         unit_amount: item.price,
         product_data: {
           name: item.productTitle || 'Product',
-          description: item.variantTitle || undefined,
+          description: stripeLineItemDescription(item.variantTitle),
           images: item.imageUrl ? [item.imageUrl] : undefined,
           metadata: {
             shopify_variant_id: extractVariantId(item.variantId),
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: allowPromotionCodes,
       billing_address_collection: billingAddressCollection,
       phone_number_collection: { enabled: true },
-      payment_method_types: ['card', 'paypal', 'link'],
+      payment_method_types: ['card', 'paypal'],
       ...(customerEmail && { customer_email: customerEmail }),
       ...(shippingAddressCollection && {
         shipping_address_collection: {

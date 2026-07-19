@@ -15,6 +15,8 @@ export interface PolarisSheetProps extends React.HTMLAttributes<HTMLDivElement> 
   overlayClassName?: string
   /** When 'dark', adds dark class so children's dark: variants apply (needed when portaled to body) */
   theme?: 'light' | 'dark'
+  /** Optional class for the inner children wrapper (default: flex-1 p-6) */
+  contentClassName?: string
 }
 
 const sideClasses = {
@@ -66,6 +68,7 @@ export function PolarisSheet({
   style,
   overlayClassName,
   theme,
+  contentClassName,
   ...props
 }: PolarisSheetProps) {
   React.useEffect(() => {
@@ -137,7 +140,7 @@ export function PolarisSheet({
                 </button>
               </div>
             )}
-            <div className="flex-1 p-6">{children}</div>
+            <div className={cn('flex min-h-0 flex-1 flex-col p-6', contentClassName)}>{children}</div>
           </motion.div>
         </motion.div>
       )}

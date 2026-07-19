@@ -90,6 +90,8 @@ function SetupFormInner({ customerEmail, onSuccess, onError }: SetupFormInnerPro
             defaultCollapsed: false,
             radios: true,
             spellCheck: false,
+            paymentMethodOrder: ['google_pay', 'apple_pay', 'card'],
+            wallets: { link: 'never' },
             ...(customerEmail && {
               defaultValues: {
                 billingDetails: { email: customerEmail },

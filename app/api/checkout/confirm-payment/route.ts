@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       payment_method: paymentMethodId,
       confirm: true,
       automatic_payment_methods: { enabled: false },
-      payment_method_types: ['card', 'link'],
+      payment_method_types: ['card'],
       metadata: {
         source: 'headless_storefront_embedded',
         shopify_variant_ids: shopifyVariantsCompact,

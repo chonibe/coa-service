@@ -3,8 +3,10 @@
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
+import { EXPERIENCE_PURCHASE_HINTS } from '@/lib/shop/experience-purchase-hints'
 import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
 import { EditionWatchControl } from '../../experience-v2/components/EditionWatchControl'
+import { ExperienceMeaningHint } from '../../experience-v2/components/ExperienceMeaningHint'
 
 export type ExperienceV3EditionStripProps = {
   product: ShopifyProduct
@@ -22,6 +24,7 @@ export function ExperienceV3EditionStrip({
   product,
   editionSize,
   quantityAvailable,
+  streetLadder = null,
   editionNumberSold,
   totalEditions,
   artistName,
@@ -33,8 +36,8 @@ export function ExperienceV3EditionStrip({
       : null
 
   return (
-    <div className={cn('px-3.5 py-3', className)}>
-      <div className="mx-auto w-full max-w-md space-y-2.5">
+    <div className={cn('px-4 py-3', className)}>
+      <div className="mx-auto w-auto space-y-2.5">
         <ScarcityBadge
           quantityAvailable={quantityAvailable}
           editionSize={editionSize}
@@ -45,10 +48,10 @@ export function ExperienceV3EditionStrip({
           productTitle={capitalizeFirstLetter(product.title)}
           unifiedSection
           hideEditionCaption
-          className="w-full"
-          streetLadder={undefined}
+          className="w-auto"
+          streetLadder={streetLadder}
         />
-        <div className="border-t border-border pt-2.5">
+        <div className="border-t border-border pt-2.5 pb-3">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-center">
             {remainingCaption ? (
               <span className="text-xs font-medium tabular-nums leading-snug text-muted-foreground md:text-[13px]">
@@ -70,6 +73,12 @@ export function ExperienceV3EditionStrip({
               variant="plain"
             />
           </div>
+          {remainingCaption ? (
+            <ExperienceMeaningHint
+              explanation={EXPERIENCE_PURCHASE_HINTS.scarcity}
+              className="mt-2 flex flex-col items-center text-center"
+            />
+          ) : null}
         </div>
       </div>
     </div>
@@ -87,7 +96,7 @@ export function ExperienceV3ProductInfoStack({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border border-border bg-experience-surface/60 md:hidden',
+        'overflow-visible rounded-xl border border-border bg-experience-surface/60 md:hidden',
         className
       )}
     >

@@ -312,6 +312,8 @@ type ExperienceV3PageContent = {
     addEditionWithPrice: (price: string) => string
     /** @deprecated Prefer addEditionWithEdition — price belongs in the price column only. */
     addEditionWithEditionAndPrice: (edition: string, price: string) => string
+    /** Mobile secondary control under the sticky add CTA — opens the artwork picker. */
+    openCollection: string
   }
   bundleCard: {
     bundleTag: string
@@ -581,9 +583,9 @@ export const storePageContent = {
       ariaLabel: 'Product information',
       faqCta: 'Full FAQ',
     },
-    trustRow: 'Free worldwide shipping · 30-day returns · 12-month guarantee',
+    trustRow: 'Free worldwide shipping · 9–15 business days · 30-day returns · 12-month guarantee',
     trustItems: [
-      { label: 'Free worldwide shipping', icon: 'shipping' },
+      { label: 'Free worldwide shipping · 9–15 business days', icon: 'shipping' },
       { label: '30-day returns', icon: 'returns' },
       { label: '12-month guarantee', icon: 'guarantee' },
     ],
@@ -605,6 +607,7 @@ export const storePageContent = {
       },
       addEditionWithPrice: (price) => `Add edition — $${price}`,
       addEditionWithEditionAndPrice: (edition, price) => `Add edition ${edition} — $${price}`,
+      openCollection: 'The Collection',
     },
     bundleCard: {
       bundleTag: 'Complete your setup',
