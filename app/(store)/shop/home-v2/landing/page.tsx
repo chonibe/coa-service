@@ -22,6 +22,7 @@ import { getYotpoStoreReviewSummary } from '@/lib/shop/yotpo-store-reviews'
 import { JsonLd } from '@/components/seo/JsonLd'
 import {
   getCollectionWithListProducts,
+  getProduct,
   isStorefrontConfigured,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
@@ -32,7 +33,9 @@ import { mergeEditionStateWithStorefront } from '@/lib/shop/merge-collector-edit
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import { computeReservedEditionNumber } from '@/lib/shop/compute-cart-edition-reserve'
 import { getProductEditionSize } from '@/lib/shop/edition-stages'
+import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import type { EditionStateItem } from '@/lib/shop/query-edition-states'
+import { LandingExperienceCartProvider } from '../components/LandingExperienceCartProvider'
 
 const LANDING_TITLE =
   'Street Collector — Not Just a Lamp. A Living Art Collection.'
@@ -202,12 +205,14 @@ function buildLandingJsonLd() {
 }
 
 export default async function HomeV2LandingPage() {
-  const [bestSellerItems, reviewSummary] = await Promise.all([
+  const [bestSellerItems, reviewSummary, lamp, shopDiscountSettings] = await Promise.all([
     loadBestSellerGalleryItems(),
     getYotpoStoreReviewSummary().catch(() => null),
+    getProduct('street_lamp').catch(() => null),
+    getShopDiscountSettings(),
   ])
 
-  return (
+  const page = (
     <div className={`${styles.page} ${landingFontVariables}`}>
       <JsonLd id="landing-jsonld" data={buildLandingJsonLd()} />
       <LandingNav />
@@ -230,5 +235,11 @@ export default async function HomeV2LandingPage() {
         breakpoint="960"
       />
     </div>
+  )
+
+  return (
+    <LandingExperienceCartProvider lamp={lamp} shopDiscountSettings={shopDiscountSettings}>
+      {page}
+    </LandingExperienceCartProvider>
   )
 }

@@ -157,11 +157,57 @@ export function injectGalleryLinkPreloads(
   }
 }
 
-/** Indices to prefetch when navigating gallery (current + neighbors). */
-export function getAdjacentGalleryIndices(current: number, length: number): number[] {
+export type AdjacentGalleryOptions = {
+  /** Prefetch the current slide too (e.g. LCP on first paint). Default false. */
+  includeCurrent?: boolean
+  /** Extra steps beyond immediate prev/next (1 → also ±2 for swipe-heavy nav). Default 1. */
+  lookahead?: number
+}
+
+/**
+ * Relative gallery indices to warm while `current` is on screen.
+ * Default: immediate prev/next plus one further step each way (lookahead 1).
+ */
+export function getAdjacentGalleryIndices(
+  current: number,
+  length: number,
+  options: AdjacentGalleryOptions = {}
+): number[] {
+  const { includeCurrent = false, lookahead = 1 } = options
   if (length <= 0) return []
   if (length === 1) return [0]
-  const prev = (current - 1 + length) % length
-  const next = (current + 1) % length
-  return Array.from(new Set([current, prev, next]))
+
+  const indices = new Set<number>()
+  if (includeCurrent) indices.add(current)
+
+  indices.add((current - 1 + length) % length)
+  indices.add((current + 1) % length)
+
+  if (lookahead > 0) {
+    for (let step = 2; step <= lookahead + 1; step++) {
+      indices.add((current - step + length) % length)
+      indices.add((current + step) % length)
+    }
+  }
+
+  return Array.from(indices).sort((a, b) => a - b)
+}
+
+/** Hero CDN URLs at the same width as the main viewer (480w mobile / 1000w desktop). */
+export function getGalleryHeroImageUrlsAtWidth(
+  images: ShopifyImage[],
+  indices: number[],
+  width: number = EXPERIENCE_GALLERY_HERO_PX
+): string[] {
+  const seen = new Set<string>()
+  const urls: string[] = []
+  for (const index of indices) {
+    const node = images[index]
+    if (!node?.url) continue
+    const url = getShopifyImageUrl(node.url, width) ?? node.url
+    if (seen.has(url)) continue
+    seen.add(url)
+    urls.push(url)
+  }
+  return urls
 }

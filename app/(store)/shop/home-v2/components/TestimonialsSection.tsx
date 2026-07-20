@@ -27,7 +27,7 @@ type LazyTestimonialVideoProps = {
 /**
  * Mounts a muted autoplay video only when close to the viewport.
  * Pauses when it scrolls away so we don't have 5 decoders running
- * simultaneously on mobile. Skips MP4 until a poster URL is provided.
+ * simultaneously on mobile. Poster is optional progressive enhancement.
  */
 function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: LazyTestimonialVideoProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -71,11 +71,9 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
     }
   }, [inView, preferPlay])
 
-  const canMountVideo = inView && Boolean(poster)
-
   return (
     <div ref={containerRef} className={className} style={{ width: '100%', height: '100%' }}>
-      {canMountVideo ? (
+      {inView ? (
         <video
           ref={videoRef}
           autoPlay

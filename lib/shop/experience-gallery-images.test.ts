@@ -1,5 +1,10 @@
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { pickInitialPreviewProduct } from './experience-gallery-images'
+import {
+  getAdjacentGalleryIndices,
+  getDefaultGalleryIndex,
+  getGalleryHeroImageUrlsAtWidth,
+  pickInitialPreviewProduct,
+} from './experience-gallery-images'
 
 function mockProduct(
   id: string,
@@ -12,6 +17,47 @@ function mockProduct(
     availableForSale: opts.availableForSale ?? true,
   } as ShopifyProduct
 }
+
+describe('getAdjacentGalleryIndices', () => {
+  it('returns empty for zero length', () => {
+    expect(getAdjacentGalleryIndices(0, 0)).toEqual([])
+  })
+
+  it('returns only index 0 for a single image', () => {
+    expect(getAdjacentGalleryIndices(0, 1)).toEqual([0])
+  })
+
+  it('prefetches immediate prev/next without current by default', () => {
+    expect(getAdjacentGalleryIndices(2, 5)).toEqual([0, 1, 3, 4])
+  })
+
+  it('includes current when requested (LCP bootstrap)', () => {
+    expect(getAdjacentGalleryIndices(2, 5, { includeCurrent: true })).toEqual([0, 1, 2, 3, 4])
+  })
+
+  it('wraps at gallery ends', () => {
+    expect(getAdjacentGalleryIndices(0, 4, { lookahead: 0 })).toEqual([1, 3])
+    expect(getAdjacentGalleryIndices(3, 4, { lookahead: 0 })).toEqual([0, 2])
+  })
+
+  it('respects lookahead 0 (immediate neighbors only)', () => {
+    expect(getAdjacentGalleryIndices(2, 5, { lookahead: 0 })).toEqual([1, 3])
+  })
+})
+
+describe('getGalleryHeroImageUrlsAtWidth', () => {
+  it('builds sized CDN URLs and dedupes', () => {
+    const images = [
+      { url: 'https://cdn.shopify.com/a.jpg', altText: 'a', width: null, height: null },
+      { url: 'https://cdn.shopify.com/b.jpg', altText: 'b', width: null, height: null },
+    ]
+    const urls = getGalleryHeroImageUrlsAtWidth(images, [0, 1, 0], 480)
+    expect(urls).toEqual([
+      'https://cdn.shopify.com/a_480x.jpg',
+      'https://cdn.shopify.com/b_480x.jpg',
+    ])
+  })
+})
 
 describe('pickInitialPreviewProduct', () => {
   it('returns null when both seasons are empty', () => {

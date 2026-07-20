@@ -34,7 +34,7 @@ export type TestimonialVideo = {
   author: string
   quote: string
   videoUrl: string
-  /** Static poster — required before MP4 mounts (LCP / payload). Add Shopify Files JPG per reel. */
+  /** Static poster for lazy-mount placeholder (optional; video still plays without it). */
   posterUrl?: string
 }
 
@@ -89,8 +89,7 @@ export const homeV2LandingContent = {
     ctaText: 'Start your collection',
     videoUrl:
       'https://cdn.shopify.com/videos/c/o/v/c4901eca91a14b65813886b586e3b7db.mp4',
-    videoPosterUrl:
-      'https://cdn.shopify.com/s/files/1/0858/7828/6798/files/street-collector-hero-poster.jpg',
+    videoPosterUrl: '/media/home/hero-poster.jpg',
     stats: [
       { label: 'Collectors', target: TRUST_STAT_PLACEHOLDERS.collectors, suffix: '+' },
       { label: 'Artists', target: TRUST_STAT_PLACEHOLDERS.artists, suffix: '+' },
@@ -486,24 +485,28 @@ export const homeV2LandingContent = {
         quote: 'Le meilleur combo lampe x visuel 🥵 C’est vraiment canon!',
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/1eaf8197dddc4b9f852534a2932d51cb.mp4',
+        posterUrl: '/media/home/testimonial-1-poster.jpg',
       },
       {
         author: 'Mazarine E.',
         quote: 'I loooooove it! My favorite piece EVER!!',
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/481c3eb1bcef489d84d3b69c881c431b.mp4',
+        posterUrl: '/media/home/testimonial-2-poster.jpg',
       },
       {
         author: 'Yaroslav I.',
         quote: "I honestly haven't seen packaging this well thought out in a long time.",
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/e16722752a44428689d98ffecf6fa016.mp4',
+        posterUrl: '/media/home/testimonial-3-poster.jpg',
       },
       {
         author: 'Debra G.',
         quote: 'The lamp and artworks are stunning — absolutely exceeded my expectations.',
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/e4c389d4b826457b91d26a849ddb61be.mp4',
+        posterUrl: '/media/home/testimonial-4-poster.jpg',
       },
     ] satisfies TestimonialVideo[],
     images: [] satisfies TestimonialImage[],

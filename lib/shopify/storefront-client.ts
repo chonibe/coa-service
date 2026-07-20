@@ -830,6 +830,48 @@ export async function getProductsByHandles(
   return products
 }
 
+function toShopifyProductGid(id: string): string {
+  if (id.startsWith('gid://shopify/Product/')) return id
+  const digits = id.replace(/\D/g, '')
+  return digits ? `gid://shopify/Product/${digits}` : id
+}
+
+/**
+ * Get multiple products by Shopify product GIDs or numeric ids (Storefront `nodes`).
+ */
+export async function getProductsByIds(ids: string[]): Promise<ShopifyProduct[]> {
+  const gids = Array.from(
+    new Set(ids.map((id) => toShopifyProductGid(id.trim())).filter(Boolean))
+  ).slice(0, 50)
+  if (gids.length === 0) return []
+
+  const aliases = gids
+    .map(
+      (gid, i) => `
+    product_${i}: node(id: "${gid}") {
+      ... on Product {
+        ...ProductFields
+      }
+    }
+  `
+    )
+    .join('\n')
+
+  const query = `
+    ${PRODUCT_FRAGMENT}
+    query GetProductsByIds {
+      ${aliases}
+    }
+  `
+
+  try {
+    const data = await storefrontQuery<Record<string, ShopifyProduct | null>>(query)
+    return Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+  } catch {
+    return []
+  }
+}
+
 /**
  * Get products with pagination
  */

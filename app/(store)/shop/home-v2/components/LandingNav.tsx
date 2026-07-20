@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
-import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollectionCartChip'
+import { ExperienceCartChip } from '@/app/(store)/shop/experience-v2/ExperienceCartChip'
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false)
@@ -43,10 +43,7 @@ export function LandingNav() {
         />
       </Link>
       <div className={styles.navRight}>
-        <ShopCollectionCartChip
-          experienceHref={homeV2LandingContent.urls.experience}
-          className="shadow-sm"
-        />
+        <ExperienceCartChip className="shadow-sm" />
         <Link href={homeV2LandingContent.urls.experience} className={styles.navCta}>
           {homeV2LandingContent.nav.ctaText}
         </Link>

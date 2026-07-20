@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import styles from '../landing.module.css'
@@ -24,6 +24,7 @@ export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
   const { hero } = homeV2LandingContent
   const [animated, setAnimated] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const starStat = formatReviewStarStat(reviewSummary)
   const reviewCountLabel = formatReviewCountStatLabel(reviewSummary)
 
@@ -79,6 +80,21 @@ export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
     els.forEach((el) => obs.observe(el))
     return () => obs.disconnect()
   }, [animated, statFloors, statTargets])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const markReady = () => setVideoReady(true)
+    const events = ['loadeddata', 'canplay', 'playing'] as const
+    for (const event of events) video.addEventListener(event, markReady)
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) markReady()
+    void video.play().catch(() => {})
+
+    return () => {
+      for (const event of events) video.removeEventListener(event, markReady)
+    }
+  }, [])
 
   return (
     <section className={styles.hero} aria-label="Hero">
@@ -148,6 +164,7 @@ export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
           />
         ) : null}
         <video
+          ref={videoRef}
           autoPlay
           muted
           defaultMuted
@@ -157,13 +174,23 @@ export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
           poster={hero.videoPosterUrl}
           onLoadedData={() => setVideoReady(true)}
           onCanPlay={() => setVideoReady(true)}
+          onPlaying={() => setVideoReady(true)}
           onLoadedMetadata={(e) => {
             const el = e.currentTarget
             el.muted = true
             el.defaultMuted = true
             el.volume = 0
+            if (el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) setVideoReady(true)
+            void el.play().catch(() => {})
           }}
-          style={videoReady ? undefined : { opacity: 0 }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            opacity: videoReady ? 1 : 0,
+            transition: 'opacity 0.35s ease',
+          }}
         >
           <source src={hero.videoUrl} type={getVideoType(hero.videoUrl)} />
         </video>

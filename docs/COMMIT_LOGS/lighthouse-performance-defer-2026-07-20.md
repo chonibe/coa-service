@@ -10,13 +10,13 @@ Landing and experience shop routes load fewer bytes on first paint by deferring 
 - [x] **Experience LCP** — 480w gallery default and related experience-v3 / carousel tweaks (`lib/shop/experience-gallery-images.ts`)
 - [x] **Spline defer** — Load Spline only when sections need it (`SplineFullScreen.tsx`, experience-v3 spline section)
 - [x] **Analytics defer** — GA, Meta, TikTok pixels gated until interaction or idle (`components/google-analytics.tsx`, `components/meta-pixel.tsx`, `components/tiktok-pixel.tsx`, `lib/analytics/landing-paths.ts`)
-- [x] **Welcome incentive** — Strip behavior aligned with perf-friendly loading (`components/shop/WelcomeIncentiveStrip.tsx`, `lib/shop/welcome-incentive.ts`)
+- [ ] **Welcome incentive** — Strip behavior (separate commit; not included here)
 - [x] **Docs** — Performance plan and experience README (`docs/performance-lighthouse-100-plan.md`, `docs/features/experience/README.md`)
 - [x] **Cleanup** — Remove committed Lighthouse HTML/JSON report artifacts from repo root
 
 ## Tests
 
-- [x] `npx jest lib/shop/experience-gallery-images.test.ts lib/shop/welcome-incentive.test.ts` — 10 passed
+- [x] `npx jest lib/analytics/landing-paths.test.ts lib/shop/experience-gallery-images.test.ts lib/shop/welcome-incentive.test.ts` — 14 passed
 
 ## Deployment
 

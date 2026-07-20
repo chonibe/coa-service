@@ -18,6 +18,7 @@ import {
   getAdjacentGalleryIndices,
   getDefaultGalleryIndex,
   getFirstProductImageUrl,
+  getGalleryHeroImageUrlsAtWidth,
   injectGalleryLinkPreloads,
   pickInitialPreviewProduct,
   prefetchImageUrls,
@@ -606,31 +607,82 @@ export function ExperienceV3Client({
     return set?.lightbox ?? null
   }, [galleryUrlSets, galleryIndex, heroGalleryStartIndex])
 
-  /** Preload hero-view (+ primary for bundle overlay) as soon as product images are known. */
+  /** LCP: preload only the first visible hero at viewport width; warm neighbors at display size (not full gallery). */
   useEffect(() => {
-    if (galleryUrlSets.length === 0) return
-    const heroUrls = [
-      ...(primaryGalleryImageUrl ? [primaryGalleryImageUrl] : []),
-      ...heroGalleryUrlSets.map((s) => s.hero),
-    ]
-    const thumbUrls = heroGalleryUrlSets.map((s) => s.thumb)
-    const removeLinks = injectGalleryLinkPreloads(heroUrls, heroUrls.length)
-    prefetchImageUrls(heroUrls, 'high')
+    if (galleryImages.length === 0 || heroGalleryLength === 0) return
+
+    const defaultAbsolute = getDefaultGalleryIndex(galleryImages.length)
+    const defaultRelative = Math.max(0, defaultAbsolute - heroGalleryStartIndex)
+    const warmRelative = getAdjacentGalleryIndices(defaultRelative, heroGalleryLength, {
+      includeCurrent: true,
+      lookahead: 1,
+    })
+    const warmAbsolute = warmRelative.map((i) => i + heroGalleryStartIndex)
+
+    const lcpUrl =
+      getGalleryHeroImageUrlsAtWidth(galleryImages, [defaultAbsolute], heroViewportWidth)[0] ?? null
+    const neighborUrls = getGalleryHeroImageUrlsAtWidth(
+      galleryImages,
+      warmAbsolute.filter((i) => i !== defaultAbsolute),
+      heroViewportWidth
+    )
+
+    const preloadUrls: string[] = []
+    if (lcpUrl) preloadUrls.push(lcpUrl)
+    if (heroGalleryStartIndex > 0 && galleryImages[0]?.url) {
+      const primaryAtViewport =
+        getShopifyImageUrl(galleryImages[0].url, heroViewportWidth) ?? galleryImages[0].url
+      if (primaryAtViewport && primaryAtViewport !== lcpUrl) preloadUrls.push(primaryAtViewport)
+    }
+
+    const removeLinks = injectGalleryLinkPreloads(lcpUrl ? [lcpUrl] : [], 1)
+    prefetchImageUrls(preloadUrls, 'high')
+    prefetchImageUrls(neighborUrls, 'low')
+
+    const thumbUrls = warmAbsolute
+      .map((i) => galleryUrlSets[i]?.thumb)
+      .filter(Boolean) as string[]
     prefetchImageUrls(thumbUrls, 'auto')
+
     return () => {
       removeLinks()
     }
-  }, [galleryProduct?.id, galleryUrlSets, heroGalleryUrlSets, primaryGalleryImageUrl])
+  }, [
+    galleryProduct?.id,
+    galleryImages,
+    galleryUrlSets,
+    heroGalleryLength,
+    heroGalleryStartIndex,
+    heroViewportWidth,
+  ])
 
-  /** Keep current + adjacent hero URLs warm when navigating the rail (skip 1800px lightbox until zoom). */
+  /** While the current hero is visible, prefetch prev/next (+ one step further) at viewer width — not 1800px lightbox. */
   useEffect(() => {
     if (heroGalleryLength === 0) return
     const relativeIndex = Math.max(0, galleryIndex - heroGalleryStartIndex)
-    const relativeAdjacent = getAdjacentGalleryIndices(relativeIndex, heroGalleryLength)
+    const relativeAdjacent = getAdjacentGalleryIndices(relativeIndex, heroGalleryLength, {
+      lookahead: 1,
+    })
     const absoluteIndices = relativeAdjacent.map((i) => i + heroGalleryStartIndex)
-    const heroUrls = absoluteIndices.map((i) => galleryUrlSets[i]?.hero).filter(Boolean) as string[]
+    const heroUrls = getGalleryHeroImageUrlsAtWidth(
+      galleryImages,
+      absoluteIndices,
+      heroViewportWidth
+    )
     prefetchImageUrls(heroUrls, 'high')
-  }, [galleryIndex, galleryUrlSets, heroGalleryLength, heroGalleryStartIndex])
+
+    const thumbUrls = absoluteIndices
+      .map((i) => galleryUrlSets[i]?.thumb)
+      .filter(Boolean) as string[]
+    prefetchImageUrls(thumbUrls, 'auto')
+  }, [
+    galleryIndex,
+    galleryImages,
+    galleryUrlSets,
+    heroGalleryLength,
+    heroGalleryStartIndex,
+    heroViewportWidth,
+  ])
 
   /** Warm lightbox assets when zoom opens (current hero-view image is enough; full primary stays via overlay). */
   useEffect(() => {
