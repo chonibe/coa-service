@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+import { useSectionInView } from '@/lib/shop/use-section-in-view'
 
 const homeV2LandingContent = getStorePageContent('homeV2')
 
@@ -14,6 +15,8 @@ export function StepsSection() {
   const [activeIndex, setActiveIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const barRef = useRef<HTMLDivElement | null>(null)
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const inView = useSectionInView(sectionRef, { rootMargin: '120px 0px', threshold: 0.12 })
 
   const active = steps.items[activeIndex] ?? steps.items[0]
 
@@ -42,11 +45,11 @@ export function StepsSection() {
   useEffect(() => {
     const video = videoRef.current
     const bar = barRef.current
-    if (!video || !bar) return
+    if (!video || !bar || !inView) return
     bar.style.width = '0%'
     video.load()
     video.play().catch(() => {})
-  }, [active.videoUrl])
+  }, [active.videoUrl, inView])
 
   const onVideoEnded = () => {
     setActiveIndex((i) => (i + 1) % steps.items.length)
@@ -56,7 +59,10 @@ export function StepsSection() {
 
   return (
     <section
-      ref={reveal.ref}
+      ref={(node) => {
+        sectionRef.current = node
+        reveal.ref.current = node
+      }}
       className={cn(styles.section, reveal.className)}
       id="how-it-works"
       aria-label="How it works"
@@ -87,7 +93,7 @@ export function StepsSection() {
             muted
             defaultMuted
             playsInline
-            preload="auto"
+            preload="metadata"
             onEnded={onVideoEnded}
             onLoadedMetadata={(e) => {
               const el = e.currentTarget
@@ -96,7 +102,7 @@ export function StepsSection() {
               el.volume = 0
             }}
           >
-            <source src={active.videoUrl} type="video/mp4" />
+            {inView ? <source src={active.videoUrl} type="video/mp4" /> : null}
           </video>
           <div className={styles.vidProgressWrap} aria-hidden>
             <div ref={barRef} className={styles.vidProgressBar} />

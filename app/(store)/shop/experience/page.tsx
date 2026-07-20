@@ -8,7 +8,7 @@ import {
   type ShopifyCollection,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { getGalleryHeroImageUrl, pickInitialPreviewProduct } from '@/lib/shop/experience-gallery-images'
+import { getGalleryHeroImageUrl, pickInitialPreviewProduct, EXPERIENCE_GALLERY_HERO_MOBILE_PX } from '@/lib/shop/experience-gallery-images'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import { ExperienceV3ClientLoader } from '../experience-v3/components/ExperienceV3ClientLoader'
 
@@ -99,7 +99,11 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
   const initialGalleryProduct = initialPreviewProduct?.handle
     ? ((await getProduct(initialPreviewProduct.handle).catch(() => null)) ?? initialPreviewProduct)
     : null
-  const initialHeroPreloadUrl = getGalleryHeroImageUrl(initialGalleryProduct ?? initialPreviewProduct)
+  const initialHeroPreloadUrl = getGalleryHeroImageUrl(
+    initialGalleryProduct ?? initialPreviewProduct,
+    undefined,
+    EXPERIENCE_GALLERY_HERO_MOBILE_PX
+  )
 
   return (
     <>

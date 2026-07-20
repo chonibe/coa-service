@@ -160,7 +160,7 @@ export function FinalCta() {
               ? state.message
               : state.status === 'success'
                 ? welcome.enabled
-                  ? `Thanks — ${welcome.successHint}`
+                  ? `Thanks — use code ${welcome.code} at checkout.`
                   : 'Thanks — keep an eye on your inbox.'
                 : ''}
           </div>

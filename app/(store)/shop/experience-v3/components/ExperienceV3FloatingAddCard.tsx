@@ -105,12 +105,6 @@ export function ExperienceV3FloatingAddCard({
     : 0
   const activeCompareAt = bundleOffer && isBundleMode ? bundleOffer.listPriceCompareAt : null
 
-  const priceSuffix = bundleOffer
-    ? isBundleMode
-      ? experienceV3Content.bundleCard.priceSuffixBundle
-      : experienceV3Content.bundleCard.priceSuffixArtwork
-    : null
-
   const showInlinePrice = !previewInCart && (bundleOffer ? activePrice > 0 : Boolean(priceMeta?.primary))
 
   const showAddButton = !previewInCart
@@ -180,9 +174,9 @@ export function ExperienceV3FloatingAddCard({
 
   const nextStepChip =
     !previewInCart && priceMeta?.nextStepChip ? (
-      <div className="flex max-w-[6.5rem] flex-col items-end gap-0.5 md:max-w-[8rem]">
+      <div className="flex flex-col items-end gap-0.5">
         <p
-          className="text-right text-[9px] font-semibold leading-tight tabular-nums text-experience-highlight md:text-[10px]"
+          className="max-w-[6.5rem] text-right text-[9px] font-semibold leading-tight tabular-nums text-experience-highlight md:max-w-[8rem] md:text-[10px]"
           title={EXPERIENCE_PURCHASE_HINTS.ladder}
         >
           {priceMeta.nextStepChip}
@@ -190,7 +184,7 @@ export function ExperienceV3FloatingAddCard({
         <ExperienceMeaningHint
           explanation="Prices rise as editions sell."
           alwaysVisible
-          className="text-right"
+          className="whitespace-nowrap text-right text-[9px] leading-none md:text-[10px]"
         />
       </div>
     ) : null
@@ -205,11 +199,6 @@ export function ExperienceV3FloatingAddCard({
           <span className="text-base font-bold tabular-nums tracking-tight text-foreground">
             ${formatPriceCompact(activePrice)}
           </span>
-          {priceSuffix ? (
-            <span className="max-w-[4.5rem] truncate text-[9px] font-medium leading-tight text-muted-foreground md:max-w-[5.5rem] md:text-[10px]">
-              {priceSuffix}
-            </span>
-          ) : null}
           {nextStepChip}
         </div>
       ) : priceMeta?.primary ? (

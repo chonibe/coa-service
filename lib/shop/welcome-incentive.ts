@@ -7,7 +7,7 @@
  * 2. Create a Promotion Code with customer-facing code matching
  *    `NEXT_PUBLIC_WELCOME_PROMO_CODE` (default WELCOME10).
  * 3. Optionally set `NEXT_PUBLIC_WELCOME_PROMO_PERCENT` to match coupon % for copy.
- * 4. Set `NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED=0` to hide the strip without removing env.
+ * 4. Set `NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED=1` to show the strip (off by default).
  */
 
 export type WelcomeIncentiveConfig = {
@@ -39,16 +39,17 @@ export function getWelcomeIncentiveConfig(): WelcomeIncentiveConfig {
       ? Math.round(percentRaw)
       : DEFAULT_PERCENT
   const enabledEnv = process.env.NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED
-  const enabled = enabledEnv == null || enabledEnv === '' ? true : enabledEnv !== '0'
+  // Off by default — set NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED=1 to show.
+  const enabled = enabledEnv === '1' || enabledEnv === 'true'
 
   return {
     enabled,
     code,
     percentOff,
     headline: `${percentOff}% off your first order`,
-    shortPitch: `Join the list — get ${percentOff}% off your first order.`,
+    shortPitch: 'Join the list for your code.',
     ctaLabel: `Get ${percentOff}% off`,
-    successHint: `Use code ${code} at checkout.`,
+    successHint: 'Use it at checkout.',
     dismissStorageKey: 'sc_welcome_incentive_dismissed',
     claimedStorageKey: 'sc_welcome_incentive_claimed',
   }

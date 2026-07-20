@@ -258,6 +258,7 @@ export function ArtworkCarouselBar({
                   type="button"
                   onClick={onOpenPicker}
                   className={emptyCollectionCtaClass}
+                  aria-label="Create your own bundle"
                 >
                   <span>Create your own bundle</span>
                   <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />

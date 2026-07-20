@@ -1,7 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { getFbc, getFbp, captureClientIpAddress } from '@/lib/meta-parameter-builder'
+import {
+  isLandingPath,
+  LANDING_ANALYTICS_DEFER_MS,
+} from '@/lib/analytics/landing-paths'
 
 declare global {
   interface Window {
@@ -15,19 +20,21 @@ const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || undefined
 /**
  * Initializes Meta Pixel base code once.
  * Event dispatching is handled in analytics helpers.
- * 
+ *
  * Also captures fbc/fbp early using Parameter Builder Library for improved EMQ.
  */
 export function MetaPixel() {
+  const pathname = usePathname()
+
   useEffect(() => {
     if (typeof window === 'undefined') return
-    
+
     // Early return if Pixel ID is not configured
     if (!META_PIXEL_ID) {
       console.warn('[Meta Pixel] NEXT_PUBLIC_META_PIXEL_ID is not set. Meta Pixel will not be initialized.')
       return
     }
-    
+
     // Early return if already initialized
     if (typeof window.fbq === 'function') return
 
@@ -64,13 +71,34 @@ export function MetaPixel() {
       }
     }
 
-    // Defer fbevents.js until the browser is idle to avoid blocking LCP/TBT
-    if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(loadScript, { timeout: 5000 })
-    } else {
-      setTimeout(loadScript, 3000)
+    const onLanding = isLandingPath(pathname)
+    let deferTimer: ReturnType<typeof setTimeout> | undefined
+    let idleId: number | undefined
+    let cancelled = false
+
+    const schedule = () => {
+      if (cancelled) return
+      if (typeof requestIdleCallback !== 'undefined') {
+        idleId = requestIdleCallback(loadScript, { timeout: 5000 }) as unknown as number
+      } else {
+        deferTimer = setTimeout(loadScript, 3000)
+      }
     }
-  }, [])
+
+    if (onLanding) {
+      deferTimer = setTimeout(schedule, LANDING_ANALYTICS_DEFER_MS)
+    } else {
+      schedule()
+    }
+
+    return () => {
+      cancelled = true
+      if (deferTimer) clearTimeout(deferTimer)
+      if (idleId !== undefined && typeof cancelIdleCallback !== 'undefined') {
+        cancelIdleCallback(idleId)
+      }
+    }
+  }, [pathname])
 
   return null
 }

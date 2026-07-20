@@ -15,13 +15,19 @@ describe('welcome-incentive', () => {
     process.env = originalEnv
   })
 
-  it('defaults to WELCOME10 and enabled', () => {
+  it('defaults to WELCOME10 and disabled', () => {
     delete process.env.NEXT_PUBLIC_WELCOME_PROMO_CODE
     delete process.env.NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED
     const cfg = getWelcomeIncentiveConfig()
     expect(cfg.code).toBe('WELCOME10')
-    expect(cfg.enabled).toBe(true)
+    expect(cfg.enabled).toBe(false)
     expect(cfg.percentOff).toBe(10)
+    expect(shouldShowWelcomeIncentiveStrip()).toBe(false)
+  })
+
+  it('respects enabled=1', () => {
+    process.env.NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED = '1'
+    expect(getWelcomeIncentiveConfig().enabled).toBe(true)
   })
 
   it('respects enabled=0', () => {

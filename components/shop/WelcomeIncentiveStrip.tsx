@@ -26,7 +26,8 @@ export type WelcomeIncentiveStripProps = {
 
 /**
  * Soft first-visit welcome offer: email → reveal configurable Stripe promo code.
- * Does not block browsing; dismissable; uses `/api/shop/newsletter`.
+ * In-flow strip (not sticky) so it does not fight floating nav / sticky CTAs.
+ * Dismissable; uses `/api/shop/newsletter`.
  */
 export function WelcomeIncentiveStrip({
   className,
@@ -91,48 +92,82 @@ export function WelcomeIncentiveStrip({
   return (
     <aside
       className={cn(
-        'relative w-full border-b px-3 py-2.5 sm:px-4',
+        'w-full border-b',
         isDark
-          ? 'border-white/10 bg-[#12100f] text-[#f5ebe0]'
-          : 'border-border bg-muted/80 text-foreground',
+          ? 'border-[color:var(--experience-border)] bg-[color:var(--experience-surface)] text-[color:var(--experience-text)]'
+          : 'border-border bg-background text-foreground',
         className
       )}
       role="region"
       aria-label="Welcome offer"
       data-testid="welcome-incentive-strip"
     >
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="min-w-0 flex-1 pr-8 sm:pr-0">
+      <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-2.5 px-6 py-4 text-center sm:flex-row sm:justify-center sm:gap-4 sm:px-14 sm:py-3.5 sm:text-left">
+        <div className="min-w-0">
           {state.status === 'success' && revealedCode ? (
-            <p className="text-sm leading-snug">
-              <span className="font-semibold">{config.headline}.</span>{' '}
-              <span className={isDark ? 'text-[#ffba94]' : 'text-experience-highlight'}>
-                Code <strong className="tracking-wide">{revealedCode}</strong>
+            <p
+              className={cn(
+                'text-[11px] font-normal uppercase leading-relaxed tracking-[0.08em]',
+                isDark ? 'text-[color:var(--experience-text-muted)]' : 'text-muted-foreground'
+              )}
+            >
+              <span
+                className={
+                  isDark ? 'text-[color:var(--experience-highlight)]' : 'text-experience-highlight'
+                }
+              >
+                {config.headline}
               </span>
-              {' — '}
+              <span className="mx-1.5 opacity-40" aria-hidden>
+                ·
+              </span>
+              Code{' '}
+              <strong
+                className={cn(
+                  'tracking-[0.12em]',
+                  isDark ? 'text-[color:var(--experience-text)]' : 'text-foreground'
+                )}
+              >
+                {revealedCode}
+              </strong>
+              <span className="mx-1.5 opacity-40" aria-hidden>
+                ·
+              </span>
               {config.successHint}
             </p>
           ) : (
-            <p className="text-sm leading-snug">
-              <span className="font-semibold">{config.headline}</span>
-              <span className={cn('ml-1.5', isDark ? 'text-white/65' : 'text-muted-foreground')}>
-                {config.shortPitch}
+            <p
+              className={cn(
+                'text-[11px] font-normal uppercase leading-relaxed tracking-[0.08em]',
+                isDark ? 'text-[color:var(--experience-text-muted)]' : 'text-muted-foreground'
+              )}
+            >
+              <span
+                className={
+                  isDark ? 'text-[color:var(--experience-highlight)]' : 'text-experience-highlight'
+                }
+              >
+                {config.headline}
               </span>
+              <span className="mx-1.5 opacity-40" aria-hidden>
+                ·
+              </span>
+              <span>{config.shortPitch}</span>
             </p>
           )}
         </div>
 
-        {state.status !== 'success' ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {!expanded ? (
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
+          {state.status !== 'success' ? (
+            !expanded ? (
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide transition-opacity hover:opacity-90',
+                  'border px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors',
                   isDark
-                    ? 'bg-[#047AFF] text-white'
-                    : 'bg-experience-cta text-white'
+                    ? 'border-white/25 text-[color:var(--experience-text-secondary)] hover:border-white/50 hover:text-[color:var(--experience-text)]'
+                    : 'border-border text-foreground hover:bg-muted'
                 )}
               >
                 {config.ctaLabel}
@@ -140,7 +175,7 @@ export function WelcomeIncentiveStrip({
             ) : (
               <form
                 onSubmit={onSubmit}
-                className="flex w-full flex-wrap items-center gap-2 sm:w-auto"
+                className="flex w-full max-w-md flex-wrap items-center justify-center gap-2 sm:w-auto"
                 aria-label="Claim welcome offer"
               >
                 <label className="sr-only" htmlFor="welcome-incentive-email">
@@ -157,44 +192,49 @@ export function WelcomeIncentiveStrip({
                   placeholder="you@email.com"
                   disabled={state.status === 'pending'}
                   className={cn(
-                    'h-8 min-w-[11rem] flex-1 rounded-md border px-2.5 text-xs sm:flex-none',
+                    'h-8 min-w-[11rem] flex-1 border px-3 text-xs tracking-wide sm:flex-none',
                     isDark
-                      ? 'border-white/20 bg-white/5 text-white placeholder:text-white/40'
+                      ? 'border-[color:var(--experience-border)] bg-transparent text-[color:var(--experience-text)] placeholder:text-[color:var(--experience-text-muted)]'
                       : 'border-border bg-background text-foreground'
                   )}
                 />
                 <button
                   type="submit"
                   disabled={state.status === 'pending'}
-                  className={cn(
-                    'h-8 rounded-md px-3 text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-60',
-                    isDark
-                      ? 'bg-[#047AFF] text-white'
-                      : 'bg-experience-cta text-white'
-                  )}
+                    className={cn(
+                      'h-8 border px-3 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors disabled:opacity-60',
+                      isDark
+                        ? 'border-white/25 text-[color:var(--experience-text-secondary)] hover:border-white/50 hover:text-[color:var(--experience-text)]'
+                        : 'border-border text-foreground hover:bg-muted'
+                    )}
                 >
                   {state.status === 'pending' ? 'Sending…' : 'Reveal code'}
                 </button>
               </form>
-            )}
-          </div>
-        ) : null}
+            )
+          ) : null}
 
-        <button
-          type="button"
-          onClick={onDismiss}
-          className={cn(
-            'absolute right-2 top-2 rounded p-1 transition-opacity hover:opacity-80 sm:static sm:shrink-0',
-            isDark ? 'text-white/50 hover:text-white' : 'text-muted-foreground'
-          )}
-          aria-label="Dismiss welcome offer"
-        >
-          <X className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className={cn(
+              'inline-flex h-8 w-8 items-center justify-center transition-opacity hover:opacity-80',
+              isDark
+                ? 'text-[color:var(--experience-text-muted)] hover:text-[color:var(--experience-text)]'
+                : 'text-muted-foreground'
+            )}
+            aria-label="Dismiss welcome offer"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+        </div>
       </div>
 
       {state.status === 'error' ? (
-        <p className="mx-auto mt-1 max-w-[1200px] text-xs text-red-400" role="status">
+        <p
+          className="mx-auto max-w-[1200px] px-6 pb-3 text-center text-xs text-red-400 sm:px-14 sm:text-left"
+          role="status"
+        >
           {state.message}
         </p>
       ) : null}

@@ -10,6 +10,7 @@ import { MetaPixel } from "@/components/meta-pixel"
 import { TikTokPixel } from "@/components/tiktok-pixel"
 import { AsyncMaterialSymbolsFont } from "@/components/AsyncMaterialSymbolsFont"
 import { streetCollectorContent } from "@/content/street-collector"
+import { homeV2LandingContent } from "@/content/home-v2-landing"
 import { getCanonicalSiteOrigin } from "@/lib/seo/site-url"
 
 const fraunces = Fraunces({ 
@@ -60,13 +61,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preload LCP image for landing page (/) — improves FCP/LCP */}
+        {/* Preload LCP poster for home-v2 landing (/) — hero is video + poster, not street-collector still */}
         <link
           rel="preload"
           as="image"
-          href={getProxiedImageUrl(streetCollectorContent.hero.image)}
+          href={getProxiedImageUrl(homeV2LandingContent.hero.videoPosterUrl)}
           fetchPriority="high"
         />
+        <link rel="preconnect" href="https://cdn.shopify.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <AsyncMaterialSymbolsFont />

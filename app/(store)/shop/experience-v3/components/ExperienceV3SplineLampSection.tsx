@@ -141,6 +141,19 @@ export function ExperienceV3SplineLampSection({
     return () => observer.disconnect()
   }, [onInViewChange, reelScrollContainerRef])
 
+  // After the section is visible, defer Spline chunk until idle; tap still loads immediately.
+  useEffect(() => {
+    if (splineReady || !inView) return
+    const schedule = (cb: () => void) =>
+      typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback(cb, { timeout: 4000 })
+        : (setTimeout(cb, 4000) as unknown as number)
+    const cancel = (id: number) =>
+      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
+    const id = schedule(() => setSplineReady(true))
+    return () => cancel(id)
+  }, [inView, splineReady])
+
   const facadeSrc = image1 ?? image2 ?? SPLINE_FACADE_SRC
   const splineImage1 = image1 ?? null
   const splineImage2 = image2 ?? image1 ?? null

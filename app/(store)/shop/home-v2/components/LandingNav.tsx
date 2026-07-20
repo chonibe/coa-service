@@ -28,7 +28,11 @@ export function LandingNav() {
 
   return (
     <nav className={`${styles.nav} ${scrolled ? styles.navScrolled : ''}`} aria-label="Primary">
-      <Link href={homeV2LandingContent.urls.home} aria-label="Street Collector Home">
+      <Link
+        href={homeV2LandingContent.urls.home}
+        className={styles.navLogo}
+        aria-label="Street Collector Home"
+      >
         <Image
           src={homeV2LandingContent.nav.logoImageUrl}
           alt={homeV2LandingContent.nav.logoAlt}
@@ -39,7 +43,10 @@ export function LandingNav() {
         />
       </Link>
       <div className={styles.navRight}>
-        <ShopCollectionCartChip experienceHref={homeV2LandingContent.urls.experience} />
+        <ShopCollectionCartChip
+          experienceHref={homeV2LandingContent.urls.experience}
+          className="shadow-sm"
+        />
         <Link href={homeV2LandingContent.urls.experience} className={styles.navCta}>
           {homeV2LandingContent.nav.ctaText}
         </Link>

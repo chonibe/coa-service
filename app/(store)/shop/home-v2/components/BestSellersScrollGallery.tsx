@@ -103,7 +103,7 @@ export function BestSellersScrollGallery({ items }: BestSellersScrollGalleryProp
           <Link href={bestSellers.viewAllHref} className={styles.btnOutline}>
             {bestSellers.viewAllLabel}
           </Link>
-          <div className={styles.bestSellersScrollControls} aria-hidden>
+          <div className={styles.bestSellersScrollControls}>
             <button
               type="button"
               className={styles.bestSellersScrollBtn}

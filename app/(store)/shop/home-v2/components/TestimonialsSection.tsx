@@ -11,6 +11,12 @@ import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 const homeV2LandingContent = getStorePageContent('homeV2')
 
+/** Tighter on mobile so Lighthouse scroll does not prefetch every reel. */
+function testimonialRootMargin(): string {
+  if (typeof window === 'undefined') return '0px'
+  return window.matchMedia('(max-width: 767px)').matches ? '0px 0px' : '80px 0px'
+}
+
 type LazyTestimonialVideoProps = {
   src: string
   poster?: string
@@ -21,12 +27,17 @@ type LazyTestimonialVideoProps = {
 /**
  * Mounts a muted autoplay video only when close to the viewport.
  * Pauses when it scrolls away so we don't have 5 decoders running
- * simultaneously on mobile.
+ * simultaneously on mobile. Skips MP4 until a poster URL is provided.
  */
 function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: LazyTestimonialVideoProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [inView, setInView] = useState(false)
+  const [rootMargin, setRootMargin] = useState('0px 0px')
+
+  useEffect(() => {
+    setRootMargin(testimonialRootMargin())
+  }, [])
 
   useEffect(() => {
     const el = containerRef.current
@@ -35,11 +46,11 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
       (entries) => {
         for (const e of entries) setInView(e.isIntersecting)
       },
-      { rootMargin: '200px 0px', threshold: 0.01 }
+      { rootMargin, threshold: 0.01 }
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [])
+  }, [rootMargin])
 
   useEffect(() => {
     const video = videoRef.current
@@ -60,9 +71,11 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
     }
   }, [inView, preferPlay])
 
+  const canMountVideo = inView && Boolean(poster)
+
   return (
     <div ref={containerRef} className={className} style={{ width: '100%', height: '100%' }}>
-      {inView ? (
+      {canMountVideo ? (
         <video
           ref={videoRef}
           autoPlay
@@ -93,9 +106,18 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
           <source src={src} type="video/mp4" />
         </video>
       ) : poster ? (
-        // eslint-disable-next-line @next/next/no-img-element -- placeholder poster while video is not mounted
+        // eslint-disable-next-line @next/next/no-img-element -- lightweight poster until video mounts
         <img src={poster} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : null}
+      ) : (
+        <div
+          aria-hidden
+          style={{
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(145deg, #1a1818 0%, #2a2424 100%)',
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -142,7 +164,11 @@ export function TestimonialsSection({ reviewSummary = null }: TestimonialsSectio
           {testimonials.videos.map((v, idx) => (
             <article key={`${v.author}-${idx}`} className={styles.tmoVideoCell} role="listitem">
               <div className={styles.tmoVideoFrame}>
-                <LazyTestimonialVideo src={v.videoUrl} className={styles.tmoVideoMedia} />
+                <LazyTestimonialVideo
+                  src={v.videoUrl}
+                  poster={v.posterUrl}
+                  className={styles.tmoVideoMedia}
+                />
               </div>
               <div className={styles.tmoVideoCaption}>
                 <div className={styles.tmoVideoAuthor}>{v.author}</div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
@@ -22,6 +23,7 @@ export type LandingHeroProps = {
 export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
   const { hero } = homeV2LandingContent
   const [animated, setAnimated] = useState(false)
+  const [videoReady, setVideoReady] = useState(false)
   const starStat = formatReviewStarStat(reviewSummary)
   const reviewCountLabel = formatReviewCountStatLabel(reviewSummary)
 
@@ -133,9 +135,19 @@ export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
         </div>
       </div>
 
-      <div className={styles.heroVisual} aria-hidden>
+      <div className={styles.heroMedia} aria-hidden>
+        {!videoReady ? (
+          <Image
+            src={hero.videoPosterUrl}
+            alt=""
+            fill
+            priority
+            fetchPriority="high"
+            sizes="(max-width: 900px) 100vw, 50vw"
+            style={{ objectFit: 'cover' }}
+          />
+        ) : null}
         <video
-          className={styles.heroVideo}
           autoPlay
           muted
           defaultMuted
@@ -143,12 +155,15 @@ export function LandingHero({ reviewSummary = null }: LandingHeroProps) {
           playsInline
           preload="metadata"
           poster={hero.videoPosterUrl}
+          onLoadedData={() => setVideoReady(true)}
+          onCanPlay={() => setVideoReady(true)}
           onLoadedMetadata={(e) => {
             const el = e.currentTarget
             el.muted = true
             el.defaultMuted = true
             el.volume = 0
           }}
+          style={videoReady ? undefined : { opacity: 0 }}
         >
           <source src={hero.videoUrl} type={getVideoType(hero.videoUrl)} />
         </video>

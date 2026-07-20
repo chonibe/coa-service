@@ -72,8 +72,10 @@ function makeBeforeSend() {
   }
 }
 
-/** Paths where we defer PostHog init by 10s to reduce TBT/bootup for Lighthouse and ad landing performance */
-const LANDING_PATHS = ["/", "/shop/street-collector", "/shop/experience", "/experience"]
+import {
+  isLandingPath,
+  LANDING_ANALYTICS_DEFER_MS,
+} from '@/lib/analytics/landing-paths'
 
 /** PostHog: session replay, heatmaps, autocapture, user journeys. Key from window (runtime) or build-time env. */
 function PostHogWrapper({ children }: { children: React.ReactNode }) {
@@ -96,7 +98,7 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           /* ignore */
         }
       }
-      const isLanding = pathname && LANDING_PATHS.some((p) => pathname === p || pathname === p + "/" || pathname.startsWith(p + "/"))
+      const isLanding = isLandingPath(pathname)
       const isDebug =
         typeof window !== "undefined" &&
         typeof window.location?.search !== "undefined" &&
@@ -146,7 +148,7 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
       if (isLanding) {
         // On landing pages, delay the entire PostHog init by 10s so plugin scripts
         // (recorder, surveys, dead-clicks, logs) don't load during Lighthouse audit window
-        setTimeout(() => doInit(true), 10000)
+        setTimeout(() => doInit(true), LANDING_ANALYTICS_DEFER_MS)
       } else {
         const initPostHog = () => doInit(true)
         if (typeof requestIdleCallback !== "undefined") {

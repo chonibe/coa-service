@@ -12,6 +12,7 @@ This directory contains the **enhanced version** of the shop homepage with immer
 
 - **Marketing landing (default):** [`page.tsx`](./page.tsx) re-exports [`landing/page.tsx`](./landing/page.tsx) — CSS-module layout, hero video, FAQ, steps, etc. No GSAP on this path.
 - **GSAP comparison:** [`gsap/page.tsx`](./gsap/page.tsx) → [`gsap-impl/page.tsx`](./gsap-impl/page.tsx) for the immersive animation stack described below.
+- **Top bar:** [`LandingNav`](./components/LandingNav.tsx) is fixed and always transparent (no solid bar on scroll). Logo, cart chip, and CTA float over the hero; empty nav space does not block clicks. Safe-area insets apply on notched devices.
 
 ### UI skills alignment (ibelick ui-skills)
 
@@ -215,6 +216,8 @@ Start with one component (e.g., GalleryReveal) and add others incrementally.
 | 2026-07-19 | Home toolbar cart chip ([`LandingNav`](./components/LandingNav.tsx) + [`ShopCollectionCartChip`](../../../../components/shop/navigation/ShopCollectionCartChip.tsx)); best-sellers hover → second image; force-mute hero/testimonial/artists videos (incl. Yaroslav); FAQ lamp size **21.5×14.5×7 cm**. |
 | 2026-07-19 | Artists wall mobile autoplay: [`ArtistsWall`](./components/ArtistsWall.tsx) adds `autoPlay` + programmatic mute/`playsInline`/`webkit-playsinline`, in-view `play()` with `canplay`/`loadeddata` retries, and debounced pause so CSS marquee intersection thrash does not abort playback. Hero + testimonials get the same mute+retry pattern (`defaultMuted` + `volume = 0` on metadata). |
 | 2026-07-19 | Live Yotpo review badge (hero + testimonials) via [`getYotpoStoreReviewSummary`](../../../../lib/shop/yotpo-store-reviews.ts) → `formatReviewRatingLabel` (“5.0 from N reviews”); never invents counts. First-visit welcome strip [`WelcomeIncentiveStrip`](../../../../components/shop/WelcomeIncentiveStrip.tsx) + Final CTA code reveal; config in [`welcome-incentive.ts`](../../../../lib/shop/welcome-incentive.ts) / `.env.example`. |
+| 2026-07-20 | Home top bar stays **transparent** while scrolling: [`LandingNav`](./components/LandingNav.tsx) + [`.nav` / `.navScrolled`](./landing.module.css) — fixed floating logo / cart / CTA (no solid bar), safe-area padding, pointer-events only on controls, logo drop-shadow for hero contrast. Explore/experience headers unchanged. |
+| 2026-07-20 | Welcome incentive **hidden by default** (`NEXT_PUBLIC_WELCOME_INCENTIVE_ENABLED` must be `1` to show). [`welcome-incentive.ts`](../../../../lib/shop/welcome-incentive.ts). |
 
 ---
 

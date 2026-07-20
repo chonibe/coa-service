@@ -190,8 +190,9 @@ export function SplineFullScreen({
   const [isDesktop, setIsDesktop] = useState(false)
   /** True when Spline + top thumb column have scrolled mostly out of the reel — show a docked Back to top FAB. */
   const [backToTopDocked, setBackToTopDocked] = useState(false)
-  // Facade pattern: show static image as LCP; mount Spline via requestIdleCallback (3s timeout) or tap
+  // Facade pattern: show static image as LCP; mount Spline via requestIdleCallback when visible
   const [splineReady, setSplineReady] = useState(false)
+  const [splineSectionVisible, setSplineSectionVisible] = useState(false)
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 768)
     check()
@@ -255,8 +256,9 @@ export function SplineFullScreen({
     }
   }, [])
 
-  // Defer Spline mount until idle (3s max) so 6.7MB scene does not block LCP
+  // Defer Spline mount until section is visible, then idle (3s max) — keeps 6.7MB scene off LCP path
   useEffect(() => {
+    if (splineReady || !splineSectionVisible) return
     const schedule = (cb: () => void) =>
       typeof requestIdleCallback !== 'undefined'
         ? requestIdleCallback(cb, { timeout: 3000 })
@@ -265,7 +267,7 @@ export function SplineFullScreen({
       typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
     const id = schedule(() => setSplineReady(true))
     return () => cancel(id)
-  }, [])
+  }, [splineReady, splineSectionVisible])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
   /** Compact glass control — docked below app chrome (`fixed` top-left; clears header + shipping strip in [`ExperienceSlideoutMenu`](../../experience-v2/ExperienceSlideoutMenu.tsx)). */
@@ -486,13 +488,16 @@ export function SplineFullScreen({
     return () => shell.removeEventListener('wheel', onWheel)
   }, [])
 
-  // Report when Spline section is in view (for carousel visibility)
+  // Report when Spline section is in view (for carousel visibility + deferred Spline boot)
   useEffect(() => {
     const scrollEl = scrollRef.current
     const splineEl = sectionRefs.current[splineSectionIndex]
-    if (!scrollEl || !splineEl || !onSplineInView) return
+    if (!scrollEl || !splineEl) return
     const observer = new IntersectionObserver(
-      ([entry]) => onSplineInView(entry.isIntersecting),
+      ([entry]) => {
+        setSplineSectionVisible(entry.isIntersecting)
+        onSplineInView?.(entry.isIntersecting)
+      },
       { root: scrollEl, rootMargin: '0px', threshold: 0.1 }
     )
     observer.observe(splineEl)
@@ -602,7 +607,7 @@ export function SplineFullScreen({
                 alt="Street Lamp preview"
                 fill
                 className="object-contain"
-                sizes="100vw"
+                sizes="(max-width: 767px) 92vw, 720px"
                 priority
                 unoptimized={!!(image1 ?? image2 ?? spotlightFallbackImageUrl)}
               />

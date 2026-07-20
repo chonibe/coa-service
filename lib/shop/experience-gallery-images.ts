@@ -1,6 +1,9 @@
 import type { ShopifyImage, ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 
+/** Hero column on narrow viewports — ~480px logical × 2 retina. */
+export const EXPERIENCE_GALLERY_HERO_MOBILE_PX = 480
+
 /** Hero column max CSS width ≈ min(72vh,820px)×3/4 (~615px); 2× retina ≈ 1230 — cap transfer size. */
 export const EXPERIENCE_GALLERY_HERO_PX = 1000
 
@@ -65,14 +68,15 @@ export function pickInitialPreviewProduct(
 
 export function getGalleryHeroImageUrl(
   product: ShopifyProduct | null,
-  galleryIndex?: number
+  galleryIndex?: number,
+  width: number = EXPERIENCE_GALLERY_HERO_PX
 ): string | null {
   const images = collectProductImages(product)
   if (images.length === 0) return null
   const idx = galleryIndex ?? getDefaultGalleryIndex(images.length)
   const node = images[idx] ?? images[0]
   if (!node?.url) return null
-  return getShopifyImageUrl(node.url, EXPERIENCE_GALLERY_HERO_PX) ?? node.url
+  return getShopifyImageUrl(node.url, width) ?? node.url
 }
 
 export function getGalleryThumbImageUrl(url: string | null | undefined): string | undefined {

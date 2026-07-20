@@ -56,7 +56,7 @@ export function FaqSectionLanding() {
               role="region"
               className={styles.faqA}
               aria-labelledby={triggerId}
-              aria-hidden={!open}
+              hidden={!open}
             >
               {item.answer}
             </div>

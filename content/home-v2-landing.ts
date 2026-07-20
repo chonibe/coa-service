@@ -34,6 +34,8 @@ export type TestimonialVideo = {
   author: string
   quote: string
   videoUrl: string
+  /** Static poster — required before MP4 mounts (LCP / payload). Add Shopify Files JPG per reel. */
+  posterUrl?: string
 }
 
 export type TestimonialImage = {

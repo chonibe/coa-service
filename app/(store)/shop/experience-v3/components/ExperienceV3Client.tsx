@@ -11,6 +11,8 @@ import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import {
   buildGalleryImageUrlSets,
   collectProductImages,
+  EXPERIENCE_GALLERY_HERO_MOBILE_PX,
+  EXPERIENCE_GALLERY_HERO_PX,
   EXPERIENCE_GALLERY_SPLINE_PX,
   EXPERIENCE_GALLERY_THUMB_PX,
   getAdjacentGalleryIndices,
@@ -576,10 +578,25 @@ export function ExperienceV3Client({
     }
   }, [galleryImages.length, galleryIndex, heroGalleryStartIndex])
 
+  const [heroViewportWidth, setHeroViewportWidth] = useState(EXPERIENCE_GALLERY_HERO_PX)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const apply = () =>
+      setHeroViewportWidth(mq.matches ? EXPERIENCE_GALLERY_HERO_MOBILE_PX : EXPERIENCE_GALLERY_HERO_PX)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+
   const heroImageUrl = useMemo(() => {
-    const set = galleryUrlSets[galleryIndex] ?? galleryUrlSets[heroGalleryStartIndex] ?? galleryUrlSets[0]
-    return set?.hero ?? null
-  }, [galleryUrlSets, galleryIndex, heroGalleryStartIndex])
+    const im =
+      galleryImages[galleryIndex] ??
+      galleryImages[heroGalleryStartIndex] ??
+      galleryImages[0]
+    if (!im?.url) return null
+    return getShopifyImageUrl(im.url, heroViewportWidth) ?? im.url
+  }, [galleryImages, galleryIndex, heroGalleryStartIndex, heroViewportWidth])
 
   /** Always the artwork's first/primary gallery image — unlike `heroImageUrl`, never follows gallery navigation. */
   const primaryGalleryImageUrl = useMemo(() => galleryUrlSets[0]?.hero ?? null, [galleryUrlSets])
@@ -605,18 +622,14 @@ export function ExperienceV3Client({
     }
   }, [galleryProduct?.id, galleryUrlSets, heroGalleryUrlSets, primaryGalleryImageUrl])
 
-  /** Keep current + adjacent hero/lightbox URLs warm when navigating the rail (hero-view set only). */
+  /** Keep current + adjacent hero URLs warm when navigating the rail (skip 1800px lightbox until zoom). */
   useEffect(() => {
     if (heroGalleryLength === 0) return
     const relativeIndex = Math.max(0, galleryIndex - heroGalleryStartIndex)
     const relativeAdjacent = getAdjacentGalleryIndices(relativeIndex, heroGalleryLength)
     const absoluteIndices = relativeAdjacent.map((i) => i + heroGalleryStartIndex)
     const heroUrls = absoluteIndices.map((i) => galleryUrlSets[i]?.hero).filter(Boolean) as string[]
-    const lightboxUrls = absoluteIndices
-      .map((i) => galleryUrlSets[i]?.lightbox)
-      .filter(Boolean) as string[]
     prefetchImageUrls(heroUrls, 'high')
-    prefetchImageUrls(lightboxUrls, 'low')
   }, [galleryIndex, galleryUrlSets, heroGalleryLength, heroGalleryStartIndex])
 
   /** Warm lightbox assets when zoom opens (current hero-view image is enough; full primary stays via overlay). */
@@ -1765,6 +1778,8 @@ export function ExperienceV3Client({
                                 touchGalleryInteraction()
                                 setGalleryIndex(absoluteI)
                               }}
+                              aria-label={`Show gallery image ${relativeI + 1} of ${heroGalleryLength}`}
+                              aria-current={selected ? 'true' : undefined}
                               className={cn(
                                 /* Ring lives on the button; image clips inside an inset layer so the ring
                                    stays fully visible (not covered by object-cover fill / parent overflow). */

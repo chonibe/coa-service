@@ -211,10 +211,11 @@ export default async function HomeV2LandingPage() {
     <div className={`${styles.page} ${landingFontVariables}`}>
       <JsonLd id="landing-jsonld" data={buildLandingJsonLd()} />
       <LandingNav />
-      <WelcomeIncentiveStrip tone="dark" />
       <main>
         <LandingHero reviewSummary={reviewSummary} />
         <TrustBar />
+        {/* Soft in-flow offer after trust — avoids fighting floating nav / sticky CTA */}
+        <WelcomeIncentiveStrip tone="dark" />
         <StepsSection />
         <ArtistsWall />
         <BestSellersScrollGallery items={bestSellerItems} />
